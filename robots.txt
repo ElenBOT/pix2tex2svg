@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://elenbot.github.io/latex2svg/sitemap.xml
