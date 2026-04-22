@@ -146,7 +146,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 3. Clean up the style and attributes to match a standard standalone SVG
         clone.removeAttribute('focusable');
+        clone.removeAttribute('role');
+        clone.removeAttribute('aria-hidden');
         clone.setAttribute('style', ''); // clear MathJax inline styles like vertical-align if any
+        
+        // Emulate the requested semantic structure by adding data-latex to the math node
+        const mathG = clone.querySelector('g[data-mml-node="math"]');
+        if (mathG) {
+            const input = container.closest('.equation-row').querySelector('.latex-input');
+            if (input) {
+                mathG.setAttribute('data-latex', input.value);
+            }
+        }
         
         // Add namespaces
         clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
