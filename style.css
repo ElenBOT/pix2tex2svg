@@ -97,6 +97,29 @@ input[type="color"]::-webkit-color-swatch {
     border: none;
 }
 
+input[type="color"]:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.transparent-toggle {
+    padding: 3px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: var(--border-radius);
+    background: #f9fafb;
+    font-size: 0.8rem;
+    font-family: 'Inter', sans-serif;
+    color: #374151;
+    cursor: pointer;
+    transition: background var(--transition-speed), color var(--transition-speed);
+}
+
+.transparent-toggle.active {
+    background: var(--primary-color);
+    color: #ffffff;
+    border-color: var(--primary-color);
+}
+
 #rows-container {
     display: flex;
     flex-direction: column;
@@ -232,6 +255,37 @@ mjx-assistive-mml {
 }
 
 .download-dropdown-container.active .download-menu {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Copy dropdown - mirrors download dropdown */
+.copy-dropdown-container {
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.copy-btn {
+    flex: 1;
+    width: 100%;
+    border-bottom: none;
+}
+
+.copy-menu {
+    display: none;
+    position: absolute;
+    right: 100%;
+    top: 0;
+    background: #ffffff;
+    border: 1px solid var(--panel-border);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 10;
+    min-width: 80px;
+}
+
+.copy-dropdown-container.active .copy-menu {
     display: flex;
     flex-direction: column;
 }

@@ -5,6 +5,16 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const exportSizeInput = document.getElementById('export-size');
     const exportColorInput = document.getElementById('export-color');
+    const exportBgColorInput = document.getElementById('export-bg-color');
+    const exportBgTransparentBtn = document.getElementById('export-bg-transparent-btn');
+
+    // Background: transparent toggle
+    let bgTransparent = true;
+    exportBgTransparentBtn.addEventListener('click', () => {
+        bgTransparent = !bgTransparent;
+        exportBgTransparentBtn.classList.toggle('active', bgTransparent);
+        exportBgColorInput.disabled = bgTransparent;
+    });
 
     // Default equations
     const eq1 = "x=\\sin\\left(\\frac{\\pi}{6}\\right)";
@@ -36,6 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const removeBtn = rowEl.querySelector('.remove-row-btn');
         
         const copySvgBtn = rowEl.querySelector('.copy-svg-btn');
+        const copyPngBtn = rowEl.querySelector('.copy-png-btn');
+        const copyDropdownContainer = rowEl.querySelector('.copy-dropdown-container');
+        const copyBtn = rowEl.querySelector('.copy-btn');
         const downloadDropdownContainer = rowEl.querySelector('.download-dropdown-container');
         const downloadBtn = rowEl.querySelector('.download-btn');
         const downloadSvgBtn = rowEl.querySelector('.download-svg-btn');
@@ -63,6 +76,15 @@ document.addEventListener('DOMContentLoaded', () => {
             rowEl.remove();
         });
 
+        // Copy dropdown toggle
+        copyBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.copy-dropdown-container.active, .download-dropdown-container.active').forEach(el => {
+                if (el !== copyDropdownContainer) el.classList.remove('active');
+            });
+            copyDropdownContainer.classList.toggle('active');
+        });
+
         // Dropdown toggle
         downloadBtn.addEventListener('click', (e) => {
             e.stopPropagation(); // prevent document click from closing immediately
@@ -74,7 +96,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Action Buttons
-        copySvgBtn.addEventListener('click', () => handleCopySvg(svgContainer, copySvgBtn));
+        copySvgBtn.addEventListener('click', () => {
+            handleCopySvg(svgContainer, copyBtn);
+            copyDropdownContainer.classList.remove('active');
+        });
+        copyPngBtn.addEventListener('click', () => {
+            handleCopyPng(svgContainer, copyBtn);
+            copyDropdownContainer.classList.remove('active');
+        });
         downloadSvgBtn.addEventListener('click', () => {
             handleDownloadSvg(svgContainer);
             downloadDropdownContainer.classList.remove('active');
@@ -93,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Close dropdowns when clicking outside
     document.addEventListener('click', () => {
-        document.querySelectorAll('.download-dropdown-container.active').forEach(el => {
+        document.querySelectorAll('.download-dropdown-container.active, .copy-dropdown-container.active').forEach(el => {
             el.classList.remove('active');
         });
     });
@@ -173,6 +202,15 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 5. Replace currentColor with the exact exportColor string
         svgString = svgString.replace(/currentColor/g, exportColor);
+
+        // 5b. Apply background color if not transparent
+        if (!bgTransparent) {
+            const bg = exportBgColorInput.value;
+            svgString = svgString.replace(
+                /(<svg[^>]*>)/,
+                `$1<rect width="100%" height="100%" fill="${bg}"/>`
+            );
+        }
         
         // 6. Fix for svg2pdf: empty path data d="" causes NaN / hpf errors
         svgString = svgString.replace(/d=""/g, 'd="M 0 0"');
@@ -186,34 +224,41 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!svgString) return;
 
         try {
-            // Try to write both text format (for Illustrator) and image format (for PPT/Word)
             if (window.ClipboardItem) {
-                const textBlob = new Blob([svgString], { type: 'text/plain' });
                 const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
-                const item = new ClipboardItem({
-                    'text/plain': textBlob,
-                    'image/svg+xml': svgBlob
-                });
-                await navigator.clipboard.write([item]);
+                await navigator.clipboard.write([new ClipboardItem({ 'image/svg+xml': svgBlob })]);
             } else {
                 await navigator.clipboard.writeText(svgString);
             }
-            
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-            setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
+            flashSuccess(btn);
         } catch (err) {
-            console.error('Failed to copy as image, falling back to text only', err);
+            console.error('Copy SVG failed, falling back to text', err);
             try {
-                // Fallback for browsers that block image/svg+xml (like some versions of Firefox)
                 await navigator.clipboard.writeText(svgString);
-                const originalIcon = btn.innerHTML;
-                btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-                setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
-            } catch (fallbackErr) {
+                flashSuccess(btn);
+            } catch {
                 alert('Failed to copy SVG to clipboard.');
             }
         }
+    }
+
+    async function handleCopyPng(container, btn) {
+        createSvgCanvas(container, async (canvas) => {
+            try {
+                canvas.toBlob(async (blob) => {
+                    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+                    flashSuccess(btn);
+                }, 'image/png');
+            } catch (err) {
+                alert('Failed to copy PNG to clipboard: ' + err.message);
+            }
+        });
+    }
+
+    function flashSuccess(btn) {
+        const originalIcon = btn.innerHTML;
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+        setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
     }
 
     function handleDownloadSvg(container) {

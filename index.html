@@ -46,6 +46,11 @@
                 <label for="export-color">Export Expression Color</label>
                 <input type="color" id="export-color" value="#000000">
             </div>
+            <div class="control-group">
+                <label for="export-bg-color">Export Background</label>
+                <button id="export-bg-transparent-btn" class="transparent-toggle active" title="Transparent background">None</button>
+                <input type="color" id="export-bg-color" value="#ffffff" disabled>
+            </div>
         </section>
 
         <main id="rows-container">
@@ -76,12 +81,18 @@
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </button>
-                <button class="action-btn copy-svg-btn" title="Copy SVG">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="9" y="9" width="13" height="13" rx="0" ry="0"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                </button>
+                <div class="copy-dropdown-container">
+                    <button class="action-btn copy-btn" title="Copy">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="0" ry="0"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <div class="copy-menu">
+                        <button class="menu-item copy-svg-btn">SVG</button>
+                        <button class="menu-item copy-png-btn">PNG</button>
+                    </div>
+                </div>
                 <div class="download-dropdown-container">
                     <button class="action-btn download-btn" title="Download">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
