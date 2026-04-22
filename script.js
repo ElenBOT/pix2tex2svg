@@ -6,7 +6,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportSizeInput = document.getElementById('export-size');
     const exportColorInput = document.getElementById('export-color');
     const exportBgColorInput = document.getElementById('export-bg-color');
+    const exportBgOpacityInput = document.getElementById('export-bg-opacity');
+    const exportBgOpacityLabel = document.getElementById('export-bg-opacity-label');
     const exportBgTransparentBtn = document.getElementById('export-bg-transparent-btn');
+
+    // Sync opacity label
+    exportBgOpacityInput.addEventListener('input', () => {
+        exportBgOpacityLabel.textContent = exportBgOpacityInput.value + '%';
+    });
 
     // Background: transparent toggle
     let bgTransparent = true;
@@ -14,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
         bgTransparent = !bgTransparent;
         exportBgTransparentBtn.classList.toggle('active', bgTransparent);
         exportBgColorInput.disabled = bgTransparent;
+        exportBgOpacityInput.disabled = bgTransparent;
     });
 
     // Default equations
@@ -204,11 +212,22 @@ document.addEventListener('DOMContentLoaded', () => {
         svgString = svgString.replace(/currentColor/g, exportColor);
 
         // 5b. Apply background color if not transparent
+        // Use viewBox coords so the rect covers negative-Y regions that MathJax uses
         if (!bgTransparent) {
-            const bg = exportBgColorInput.value;
+            const hex = exportBgColorInput.value;
+            const opacity = parseInt(exportBgOpacityInput.value) / 100;
+            const bg = hexToRgba(hex, opacity);
+            const vbMatch = clone.getAttribute('viewBox');
+            let rectAttrs;
+            if (vbMatch) {
+                const [vx, vy, vw, vh] = vbMatch.trim().split(/[\s,]+/).map(Number);
+                rectAttrs = `x="${vx}" y="${vy}" width="${vw}" height="${vh}"`;
+            } else {
+                rectAttrs = `width="100%" height="100%"`;
+            }
             svgString = svgString.replace(
                 /(<svg[^>]*>)/,
-                `$1<rect width="100%" height="100%" fill="${bg}"/>`
+                `$1<rect ${rectAttrs} fill="${bg}"/>`
             );
         }
         
@@ -217,6 +236,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 7. Return with standard XML declaration
         return '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>\n' + svgString;
+    }
+
+    function hexToRgba(hex, opacity) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgba(${r},${g},${b},${opacity})`;
     }
 
     async function handleCopySvg(container, btn) {
@@ -274,13 +300,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const svgString = getSvgString(container);
         if (!svgString) return;
 
-        // Create temporary container to get actual dimensions with the new font size
-        const tempDiv = document.createElement('div');
-        tempDiv.innerHTML = svgString;
-        document.body.appendChild(tempDiv);
-        const tempSvg = tempDiv.querySelector('svg');
-        const rect = tempSvg.getBoundingClientRect();
-        document.body.removeChild(tempDiv);
+        // Read dimensions directly from the SVG attributes set by getSvgString (no remeasure needed)
+        const parser = new DOMParser();
+        const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+        const parsedSvg = svgDoc.querySelector('svg');
+        const svgWidth = parseFloat(parsedSvg.getAttribute('width'));
+        const svgHeight = parseFloat(parsedSvg.getAttribute('height'));
 
         const img = new Image();
         const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
@@ -289,13 +314,12 @@ document.addEventListener('DOMContentLoaded', () => {
         img.onload = () => {
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
-            const padding = 20;
-            canvas.width = rect.width + padding * 2;
-            canvas.height = rect.height + padding * 2;
+
+            canvas.width = svgWidth;
+            canvas.height = svgHeight;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, padding, padding, rect.width, rect.height);
+            ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
             URL.revokeObjectURL(url);
             
             callback(canvas);
