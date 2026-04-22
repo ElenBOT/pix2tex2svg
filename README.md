@@ -1,31 +1,26 @@
 # latex2svg
 
-A lightweight web tool that converts LaTeX math expressions to high‑quality SVG files.
+A browser-based tool for converting LaTeX math expressions into high-quality SVG.
+No installation. No server. Just open and use.
 
-## Features
-- **Instant SVG output** using MathJax v4 for crisp NCM fonts.
-- **Copy‑paste ready** – generated SVGs can be directly pasted into **Adobe Illustrator**, **Microsoft PowerPoint**, or any vector‑aware editor.
-- Supports custom LaTeX fonts (e.g., `STIX`, `Latin Modern`).
-- No server side required – runs entirely in the browser.
+https://elenbot.github.io/latex2svg/
 
-## Quick Start
-1. Open `https://elenbot.github.io/latex2svg/` in a browser.
-2. Type your LaTeX expression in the input area.
-3. Click **Export SVG**. The SVG code is copied to the clipboard.
-4. Paste the SVG into Illustrator, PowerPoint, or any other vector tool.
+## What it does
 
-## Dependencies
-- **MathJax v4** – renders LaTeX to SVG.
-- **svg2pdf.js** (optional) – can also export PDF if needed.
-- Built‑in **font loader** pulls fonts from Google Fonts; you can configure the `fontFamily` in `script.js`.
+- Renders LaTeX using **MathJax v4** with NCM fonts
+- Copy as **SVG** (paste directly into Adobe Illustrator or Microsoft PowerPoint)
+- Copy as **PNG** (paste into Discord, Messenger, or any chat app)
+- Download as SVG / PNG / PDF
+- Set export size, expression color, and background color per session
 
-## Development
-```bash
-# Install dependencies (if any)
-npm install
-# Run a local dev server
-npm run dev
-```
+## Tech
+
+- **Renderer**: MathJax v4 (`tex-svg`)
+- **PDF export**: jsPDF + svg2pdf.js
+- **UI font**: Inter (Google Fonts)
+- **LaTeX fonts**: New Computer Modern (via MathJax)
+- No build step — pure HTML / CSS / JS
 
 ## License
-MIT – see `LICENSE` for details.
+
+MIT
