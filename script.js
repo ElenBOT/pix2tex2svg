@@ -134,17 +134,32 @@ document.addEventListener('DOMContentLoaded', () => {
         clone.setAttribute('fill', exportColor);
         clone.style.color = exportColor;
         clone.style.fill = exportColor;
-        clone.style.fontSize = `${exportSize}px`;
         clone.removeAttribute('focusable');
+
+        // To get exact pixel dimensions, we can parse the ex width/height
+        // 1 ex is roughly 0.5 em. Since we are using exportSize as the target em,
+        // 1 ex = exportSize / 2
+        const exToPx = exportSize / 2;
+        
+        const widthEx = parseFloat(clone.getAttribute('width'));
+        const heightEx = parseFloat(clone.getAttribute('height'));
+        
+        if (!isNaN(widthEx) && !isNaN(heightEx)) {
+            clone.setAttribute('width', `${widthEx * exToPx}px`);
+            clone.setAttribute('height', `${heightEx * exToPx}px`);
+        } else {
+            // Fallback if MathJax didn't use ex
+            clone.style.fontSize = `${exportSize}px`;
+        }
+
+        // Add standard xmlns if missing
+        clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
+        clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
         
         const serializer = new XMLSerializer();
         let svgString = serializer.serializeToString(clone);
         
-        if (!svgString.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
-            svgString = svgString.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
-        }
-        
-        return svgString;
+        return '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>\n' + svgString;
     }
 
     async function handleCopySvg(container, btn) {
