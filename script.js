@@ -6,14 +6,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const exportSizeInput = document.getElementById('export-size');
     const exportColorInput = document.getElementById('export-color');
 
-    // Default equation
-    const defaultEquation = "E = mc^2";
+    // Default equations
+    const eq1 = "x=\\sin\\left(\\frac{\\pi}{6}\\right)";
+    const eq2 = "\\langle a^{\\dagger n}a^m \\rangle\n=\n\\langle\\psi|a^{\\dagger n}a^m |\\psi\\rangle";
+    const eq3 = "\\rho=\\begin{pmatrix}\nP_0 & c_{01}^* \\\\\nc_{01} & P_1 \n\\end{pmatrix}";
 
     // Wait for MathJax to be ready before adding the first row
     const waitForMathJax = setInterval(() => {
         if (window.MathJax && window.MathJax.tex2svgPromise) {
             clearInterval(waitForMathJax);
-            addRow(defaultEquation);
+            addRow(eq1);
+            addRow(eq2);
+            addRow(eq3);
         }
     }, 100);
 
