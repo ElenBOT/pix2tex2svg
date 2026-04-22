@@ -9,7 +9,7 @@ A lightweight web tool that converts LaTeX math expressions to high‑quality SV
 - No server side required – runs entirely in the browser.
 
 ## Quick Start
-1. Open `index.html` in a browser.
+1. Open `https://elenbot.github.io/latex2svg/` in a browser.
 2. Type your LaTeX expression in the input area.
 3. Click **Export SVG**. The SVG code is copied to the clipboard.
 4. Paste the SVG into Illustrator, PowerPoint, or any other vector tool.
