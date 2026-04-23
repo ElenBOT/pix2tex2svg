@@ -83,7 +83,7 @@ pause & exit /b 1
 echo  Found Conda at: %CONDA_ROOT%
 echo.
 
-:: -- Step 3: Check or create conda environment ------------------------------
+:: -- Step 3 & 4: Check or create conda environment ------------------------------
 
 call "%CONDA_ROOT%\Scripts\activate.bat" "%CONDA_ROOT%"
 
@@ -101,28 +101,23 @@ if errorlevel 1 (
         echo.
         pause & exit /b 1
     )
+    
+    echo.
+    echo [4/4] Activating environment and installing Python packages...
+    call conda activate pix2tex2svg
+    
+    pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
+    if errorlevel 1 (
+        echo.
+        echo  ERROR: pip install failed.
+        echo.
+        pause & exit /b 1
+    )
 ) else (
-    echo  Environment 'pix2tex2svg' already exists.
-)
-
-:: -- Step 4: Install/Update Python packages ----------------------------------
-
-echo.
-echo [4/4] Activating environment and installing/updating Python packages...
-call conda activate pix2tex2svg
-if errorlevel 1 (
     echo.
-    echo  ERROR: Could not activate environment 'pix2tex2svg'.
+    echo  Environment 'pix2tex2svg' already exists. Skipping creation and installation.
+    echo [4/4] Packages are assumed to be already installed.
     echo.
-    pause & exit /b 1
-)
-
-pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
-if errorlevel 1 (
-    echo.
-    echo  ERROR: pip install failed.
-    echo.
-    pause & exit /b 1
 )
 
 :: -- Done ----------------------------------------------------------------------
