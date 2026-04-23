@@ -1,14 +1,24 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const rowsContainer = document.getElementById('rows-container');
-    const addRowBtn = document.getElementById('add-row-btn');
-    const template = document.getElementById('row-template');
-    
-    const exportSizeInput = document.getElementById('export-size');
-    const exportColorInput = document.getElementById('export-color');
-    const exportBgColorInput = document.getElementById('export-bg-color');
-    const exportBgTransparentBtn = document.getElementById('export-bg-transparent-btn');
+// ─────────────────────────────────────────────────────────────────────────────
+// pix2tex2svg — main script
+// Forked from latex2svg; adds OCR (paste / upload) and drag-to-reorder.
+// ─────────────────────────────────────────────────────────────────────────────
 
-    // Background: transparent toggle
+const API_BASE = 'http://127.0.0.1:7070';
+
+document.addEventListener('DOMContentLoaded', () => {
+    const rowsContainer        = document.getElementById('rows-container');
+    const addRowBtn            = document.getElementById('add-row-btn');
+    const template             = document.getElementById('row-template');
+    const globalFileInput      = document.getElementById('global-file-input');
+    const serverDot            = document.getElementById('server-dot');
+    const serverStatusLabel    = document.getElementById('server-status-label');
+
+    const exportSizeInput           = document.getElementById('export-size');
+    const exportColorInput          = document.getElementById('export-color');
+    const exportBgColorInput        = document.getElementById('export-bg-color');
+    const exportBgTransparentBtn    = document.getElementById('export-bg-transparent-btn');
+
+    // Background transparent toggle
     let bgTransparent = true;
     exportBgTransparentBtn.addEventListener('click', () => {
         bgTransparent = !bgTransparent;
@@ -16,12 +26,29 @@ document.addEventListener('DOMContentLoaded', () => {
         exportBgColorInput.disabled = bgTransparent;
     });
 
-    // Default equations
+    // ── Server health check ──────────────────────────────────────────────────
+    let serverOnline = false;
+
+    async function checkServer() {
+        try {
+            const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(2000) });
+            serverOnline = res.ok;
+        } catch {
+            serverOnline = false;
+        }
+        serverDot.className = 'server-dot ' + (serverOnline ? 'online' : 'offline');
+        serverStatusLabel.textContent = serverOnline ? 'OCR server online' : 'OCR server offline';
+    }
+
+    checkServer();
+    setInterval(checkServer, 8000);
+
+    // ── Default equations ────────────────────────────────────────────────────
     const eq1 = "x=\\sin\\left(\\frac{\\pi}{6}\\right)";
     const eq2 = "\\langle a^{\\dagger n}a^m \\rangle\n=\n\\langle\\psi|a^{\\dagger n}a^m |\\psi\\rangle";
     const eq3 = "\\rho=\\begin{pmatrix}\nP_0 & c_{01}^* \\\\\nc_{01} & P_1 \n\\end{pmatrix}";
 
-    // Wait for MathJax to be ready before adding the first row
+    // Wait for MathJax before adding initial rows
     const waitForMathJax = setInterval(() => {
         if (window.MathJax && window.MathJax.tex2svgPromise) {
             clearInterval(waitForMathJax);
@@ -31,71 +58,247 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 100);
 
-    // Add new row handler
-    addRowBtn.addEventListener('click', () => {
-        addRow("");
-    });
+    addRowBtn.addEventListener('click', () => addRow(''));
 
+    // ── Toast ────────────────────────────────────────────────────────────────
+    const toast = document.getElementById('toast');
+    let toastTimer;
+    function showToast(msg, isError = false) {
+        clearTimeout(toastTimer);
+        toast.textContent = msg;
+        toast.className = 'toast show' + (isError ? ' error' : '');
+        toastTimer = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // ── Drag-and-drop row reordering ─────────────────────────────────────────
+    let dragSrc = null;
+
+    function setupDragHandle(rowEl, handleBtn) {
+        handleBtn.addEventListener('mousedown', () => {
+            rowEl.setAttribute('draggable', 'true');
+        });
+        handleBtn.addEventListener('mouseup', () => {
+            rowEl.setAttribute('draggable', 'false');
+        });
+
+        rowEl.addEventListener('dragstart', (e) => {
+            dragSrc = rowEl;
+            rowEl.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', ''); // Firefox needs this
+        });
+
+        rowEl.addEventListener('dragend', () => {
+            rowEl.classList.remove('dragging');
+            rowEl.setAttribute('draggable', 'false');
+            document.querySelectorAll('.equation-row').forEach(r => r.classList.remove('drag-over'));
+        });
+
+        rowEl.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            if (dragSrc && dragSrc !== rowEl) {
+                document.querySelectorAll('.equation-row').forEach(r => r.classList.remove('drag-over'));
+                rowEl.classList.add('drag-over');
+            }
+        });
+
+        rowEl.addEventListener('dragleave', () => {
+            rowEl.classList.remove('drag-over');
+        });
+
+        rowEl.addEventListener('drop', (e) => {
+            e.stopPropagation();
+            rowEl.classList.remove('drag-over');
+            if (!dragSrc || dragSrc === rowEl) return;
+
+            // Insert dragSrc before or after rowEl depending on mouse position
+            const rect = rowEl.getBoundingClientRect();
+            const midY = rect.top + rect.height / 2;
+            if (e.clientY < midY) {
+                rowsContainer.insertBefore(dragSrc, rowEl);
+            } else {
+                rowsContainer.insertBefore(dragSrc, rowEl.nextSibling);
+            }
+            dragSrc = null;
+        });
+    }
+
+    // ── OCR helper ───────────────────────────────────────────────────────────
+    async function runOcrOnFile(file, input, ocrStatus, btn) {
+        if (!serverOnline) {
+            showToast('OCR server is offline — start server.py first', true);
+            return;
+        }
+        ocrStatus.textContent = 'Running OCR…';
+        btn.classList.add('ocr-loading');
+
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
+            const res = await fetch(`${API_BASE}/ocr/upload`, { method: 'POST', body: formData });
+            if (!res.ok) throw new Error(`Server error ${res.status}`);
+            const data = await res.json();
+            input.value = data.latex;
+            input.dispatchEvent(new Event('input'));
+            ocrStatus.textContent = 'OCR complete ✓';
+            setTimeout(() => { ocrStatus.textContent = ''; }, 3000);
+            showToast('LaTeX extracted from image!');
+        } catch (err) {
+            ocrStatus.textContent = '';
+            showToast('OCR failed: ' + err.message, true);
+        } finally {
+            btn.classList.remove('ocr-loading');
+        }
+    }
+
+    async function runOcrOnBase64(b64, input, ocrStatus, btn) {
+        if (!serverOnline) {
+            showToast('OCR server is offline — start server.py first', true);
+            return;
+        }
+        ocrStatus.textContent = 'Running OCR…';
+        btn.classList.add('ocr-loading');
+
+        try {
+            const res = await fetch(`${API_BASE}/ocr/base64`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image: b64 })
+            });
+            if (!res.ok) throw new Error(`Server error ${res.status}`);
+            const data = await res.json();
+            input.value = data.latex;
+            input.dispatchEvent(new Event('input'));
+            ocrStatus.textContent = 'OCR complete ✓';
+            setTimeout(() => { ocrStatus.textContent = ''; }, 3000);
+            showToast('LaTeX extracted from clipboard image!');
+        } catch (err) {
+            ocrStatus.textContent = '';
+            showToast('OCR failed: ' + err.message, true);
+        } finally {
+            btn.classList.remove('ocr-loading');
+        }
+    }
+
+    // Convert a clipboard ImageBitmap → canvas → base64
+    function bitmapToBase64(bitmap) {
+        const canvas = document.createElement('canvas');
+        canvas.width  = bitmap.width;
+        canvas.height = bitmap.height;
+        canvas.getContext('2d').drawImage(bitmap, 0, 0);
+        return canvas.toDataURL('image/png'); // data-URI
+    }
+
+    // ── addRow ───────────────────────────────────────────────────────────────
     function addRow(initialLatex) {
         const rowFrag = template.content.cloneNode(true);
-        const rowEl = rowFrag.querySelector('.equation-row');
-        
-        const input = rowEl.querySelector('.latex-input');
+        const rowEl   = rowFrag.querySelector('.equation-row');
+
+        const input      = rowEl.querySelector('.latex-input');
+        const ocrStatus  = rowEl.querySelector('.ocr-status');
         const svgContainer = rowEl.querySelector('.svg-output');
-        const errorMsg = rowEl.querySelector('.error-msg');
-        const removeBtn = rowEl.querySelector('.remove-row-btn');
-        
-        const copySvgBtn = rowEl.querySelector('.copy-svg-btn');
-        const copyPngBtn = rowEl.querySelector('.copy-png-btn');
-        const copyDropdownContainer = rowEl.querySelector('.copy-dropdown-container');
-        const copyBtn = rowEl.querySelector('.copy-btn');
+        const errorMsg   = rowEl.querySelector('.error-msg');
+        const removeBtn  = rowEl.querySelector('.remove-row-btn');
+
+        // Left buttons
+        const dragHandleBtn  = rowEl.querySelector('.drag-handle-btn');
+        const ocrPasteBtn    = rowEl.querySelector('.ocr-paste-btn');
+        const ocrUploadBtn   = rowEl.querySelector('.ocr-upload-btn');
+
+        // Right buttons
+        const copySvgBtn              = rowEl.querySelector('.copy-svg-btn');
+        const copyPngBtn              = rowEl.querySelector('.copy-png-btn');
+        const copyDropdownContainer   = rowEl.querySelector('.copy-dropdown-container');
+        const copyBtn                 = rowEl.querySelector('.copy-btn');
         const downloadDropdownContainer = rowEl.querySelector('.download-dropdown-container');
-        const downloadBtn = rowEl.querySelector('.download-btn');
-        const downloadSvgBtn = rowEl.querySelector('.download-svg-btn');
-        const downloadPngBtn = rowEl.querySelector('.download-png-btn');
-        const downloadPdfBtn = rowEl.querySelector('.download-pdf-btn');
+        const downloadBtn             = rowEl.querySelector('.download-btn');
+        const downloadSvgBtn          = rowEl.querySelector('.download-svg-btn');
+        const downloadPngBtn          = rowEl.querySelector('.download-png-btn');
+        const downloadPdfBtn          = rowEl.querySelector('.download-pdf-btn');
 
         input.value = initialLatex;
 
-        // Render initially
         if (initialLatex) {
             renderMath(initialLatex, svgContainer, errorMsg);
         }
 
-        // Debounce input
-        let timeout = null;
+        // Debounced live preview
+        let debounceTimer = null;
         input.addEventListener('input', () => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
                 renderMath(input.value, svgContainer, errorMsg);
             }, 300);
         });
 
-        // Remove row
-        removeBtn.addEventListener('click', () => {
-            rowEl.remove();
+        // Remove
+        removeBtn.addEventListener('click', () => rowEl.remove());
+
+        // Drag-to-reorder
+        setupDragHandle(rowEl, dragHandleBtn);
+
+        // ── OCR: paste from clipboard ────────────────────────────────────────
+        ocrPasteBtn.addEventListener('click', async () => {
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) {
+                    showToast('Clipboard API not supported in this browser', true);
+                    return;
+                }
+                const items = await navigator.clipboard.read();
+                let found = false;
+                for (const item of items) {
+                    const imageType = item.types.find(t => t.startsWith('image/'));
+                    if (imageType) {
+                        const blob = await item.getType(imageType);
+                        const bitmap = await createImageBitmap(blob);
+                        const b64 = bitmapToBase64(bitmap);
+                        await runOcrOnBase64(b64, input, ocrStatus, ocrPasteBtn);
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) {
+                    showToast('No image found in clipboard', true);
+                }
+            } catch (err) {
+                // Browser may deny clipboard read permission
+                showToast('Clipboard read denied: ' + err.message, true);
+            }
         });
 
-        // Copy dropdown toggle
+        // ── OCR: upload file ─────────────────────────────────────────────────
+        ocrUploadBtn.addEventListener('click', () => {
+            // Re-use the single hidden file input; attach a one-shot handler
+            const handler = async (e) => {
+                globalFileInput.removeEventListener('change', handler);
+                const file = e.target.files[0];
+                globalFileInput.value = ''; // reset so same file can be re-selected
+                if (!file) return;
+                await runOcrOnFile(file, input, ocrStatus, ocrUploadBtn);
+            };
+            globalFileInput.addEventListener('change', handler);
+            globalFileInput.click();
+        });
+
+        // ── Copy dropdown ────────────────────────────────────────────────────
         copyBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            document.querySelectorAll('.copy-dropdown-container.active, .download-dropdown-container.active').forEach(el => {
-                if (el !== copyDropdownContainer) el.classList.remove('active');
-            });
+            document.querySelectorAll('.copy-dropdown-container.active, .download-dropdown-container.active')
+                .forEach(el => { if (el !== copyDropdownContainer) el.classList.remove('active'); });
             copyDropdownContainer.classList.toggle('active');
         });
 
-        // Dropdown toggle
+        // ── Download dropdown ────────────────────────────────────────────────
         downloadBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // prevent document click from closing immediately
-            // Close other dropdowns
-            document.querySelectorAll('.download-dropdown-container.active').forEach(el => {
-                if (el !== downloadDropdownContainer) el.classList.remove('active');
-            });
+            e.stopPropagation();
+            document.querySelectorAll('.download-dropdown-container.active')
+                .forEach(el => { if (el !== downloadDropdownContainer) el.classList.remove('active'); });
             downloadDropdownContainer.classList.toggle('active');
         });
 
-        // Action Buttons
         copySvgBtn.addEventListener('click', () => {
             handleCopySvg(svgContainer, copyBtn);
             copyDropdownContainer.classList.remove('active');
@@ -120,13 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
         rowsContainer.appendChild(rowFrag);
     }
 
-    // Close dropdowns when clicking outside
+    // Close dropdowns on outside click
     document.addEventListener('click', () => {
-        document.querySelectorAll('.download-dropdown-container.active, .copy-dropdown-container.active').forEach(el => {
-            el.classList.remove('active');
-        });
+        document.querySelectorAll('.download-dropdown-container.active, .copy-dropdown-container.active')
+            .forEach(el => el.classList.remove('active'));
     });
 
+    // ── MathJax rendering ────────────────────────────────────────────────────
     function renderMath(latex, container, errorMsg) {
         if (!latex.trim()) {
             container.innerHTML = '';
@@ -134,16 +337,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        MathJax.tex2svgPromise(latex, {display: true}).then((node) => {
+        MathJax.tex2svgPromise(latex, { display: true }).then((node) => {
             container.innerHTML = '';
             container.appendChild(node);
-            
             const svg = container.querySelector('svg');
             if (svg) {
-                svg.style.width = 'auto';
+                svg.style.width  = 'auto';
                 svg.style.height = 'auto';
             }
-
             errorMsg.style.display = 'none';
         }).catch((err) => {
             errorMsg.textContent = err.message;
@@ -151,60 +352,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Export Helpers --- //
+    // ── Export helpers (unchanged from latex2svg) ────────────────────────────
 
-    // Gets a serialized, self-contained SVG string styled for export
     function getSvgString(container) {
         const svg = container.querySelector('svg');
         if (!svg) return null;
 
         const clone = svg.cloneNode(true);
         const exportColor = exportColorInput.value;
-        const exportSize = parseInt(exportSizeInput.value) || 32;
-        
-        // 1. Calculate exact pixel dimensions by rendering it temporarily
+        const exportSize  = parseInt(exportSizeInput.value) || 32;
+
+        // Measure dimensions
         const tempDiv = document.createElement('div');
         tempDiv.style.fontSize = `${exportSize}px`;
-        // MathJax uses ex units relative to font-size. 
-        // We append the clone to measure how the browser resolves its width/height.
         tempDiv.appendChild(clone.cloneNode(true));
         document.body.appendChild(tempDiv);
         const tempSvg = tempDiv.querySelector('svg');
-        const rect = tempSvg.getBoundingClientRect();
+        const rect    = tempSvg.getBoundingClientRect();
         document.body.removeChild(tempDiv);
 
-        // 2. Set precise width and height without px suffix to avoid parser NaN issues
-        clone.setAttribute('width', `${rect.width.toFixed(3)}`);
+        clone.setAttribute('width',  `${rect.width.toFixed(3)}`);
         clone.setAttribute('height', `${rect.height.toFixed(3)}`);
-        
-        // 3. Clean up the style and attributes to match a standard standalone SVG
+
         clone.removeAttribute('focusable');
         clone.removeAttribute('role');
         clone.removeAttribute('aria-hidden');
-        clone.removeAttribute('style'); // clear MathJax inline styles instead of setting to empty string
-        
-        // Emulate the requested semantic structure by adding data-latex to the math node
+        clone.removeAttribute('style');
+
         const mathG = clone.querySelector('g[data-mml-node="math"]');
         if (mathG) {
             const input = container.closest('.equation-row').querySelector('.latex-input');
-            if (input) {
-                mathG.setAttribute('data-latex', input.value);
-            }
+            if (input) mathG.setAttribute('data-latex', input.value);
         }
-        
-        // Add namespaces
-        clone.setAttribute('xmlns', "http://www.w3.org/2000/svg");
-        clone.setAttribute('xmlns:xlink', "http://www.w3.org/1999/xlink");
-        
-        // 4. Serialize to string
+
+        clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        clone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+
         const serializer = new XMLSerializer();
         let svgString = serializer.serializeToString(clone);
-        
-        // 5. Replace currentColor with the exact exportColor string
+
         svgString = svgString.replace(/currentColor/g, exportColor);
 
-        // 5b. Apply background color if not transparent
-        // Use viewBox coords so the rect covers negative-Y regions that MathJax uses
         if (!bgTransparent) {
             const bg = exportBgColorInput.value;
             const vbMatch = clone.getAttribute('viewBox');
@@ -215,16 +403,11 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 rectAttrs = `width="100%" height="100%"`;
             }
-            svgString = svgString.replace(
-                /(<svg[^>]*>)/,
-                `$1<rect ${rectAttrs} fill="${bg}"/>`
-            );
+            svgString = svgString.replace(/(<svg[^>]*>)/, `$1<rect ${rectAttrs} fill="${bg}"/>`);
         }
-        
-        // 6. Fix for svg2pdf: empty path data d="" causes NaN / hpf errors
+
         svgString = svgString.replace(/d=""/g, 'd="M 0 0"');
-        
-        // 7. Return with standard XML declaration
+
         return '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>\n' + svgString;
     }
 
@@ -240,13 +423,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 await navigator.clipboard.writeText(svgString);
             }
             flashSuccess(btn);
+            showToast('SVG copied!');
         } catch (err) {
-            console.error('Copy SVG failed, falling back to text', err);
             try {
                 await navigator.clipboard.writeText(svgString);
                 flashSuccess(btn);
+                showToast('SVG copied as text!');
             } catch {
-                alert('Failed to copy SVG to clipboard.');
+                showToast('Failed to copy SVG', true);
             }
         }
     }
@@ -257,55 +441,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 canvas.toBlob(async (blob) => {
                     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
                     flashSuccess(btn);
+                    showToast('PNG copied!');
                 }, 'image/png');
             } catch (err) {
-                alert('Failed to copy PNG to clipboard: ' + err.message);
+                showToast('Failed to copy PNG: ' + err.message, true);
             }
         });
     }
 
     function flashSuccess(btn) {
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-        setTimeout(() => { btn.innerHTML = originalIcon; }, 2000);
+        const orig = btn.innerHTML;
+        btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="green" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>';
+        setTimeout(() => { btn.innerHTML = orig; }, 2000);
     }
 
     function handleDownloadSvg(container) {
         const svgString = getSvgString(container);
         if (!svgString) return;
-
-        const blob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
-        const url = URL.createObjectURL(blob);
-        triggerDownload(url, 'expression.svg');
+        const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        triggerDownload(URL.createObjectURL(blob), 'expression.svg');
     }
 
     function createSvgCanvas(container, callback) {
         const svgString = getSvgString(container);
         if (!svgString) return;
 
-        // Read dimensions directly from the SVG attributes set by getSvgString (no remeasure needed)
-        const parser = new DOMParser();
-        const svgDoc = parser.parseFromString(svgString, 'image/svg+xml');
+        const parser    = new DOMParser();
+        const svgDoc    = parser.parseFromString(svgString, 'image/svg+xml');
         const parsedSvg = svgDoc.querySelector('svg');
-        const svgWidth = parseFloat(parsedSvg.getAttribute('width'));
+        const svgWidth  = parseFloat(parsedSvg.getAttribute('width'));
         const svgHeight = parseFloat(parsedSvg.getAttribute('height'));
 
-        const img = new Image();
-        const svgBlob = new Blob([svgString], {type: "image/svg+xml;charset=utf-8"});
-        const url = URL.createObjectURL(svgBlob);
+        const img     = new Image();
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url     = URL.createObjectURL(svgBlob);
 
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-
-            const scale = 2; // 2x per axis = 4x pixel density
-            canvas.width = svgWidth * scale;
+            const canvas  = document.createElement('canvas');
+            const ctx     = canvas.getContext('2d');
+            const scale   = 2; // 4× pixel density
+            canvas.width  = svgWidth  * scale;
             canvas.height = svgHeight * scale;
-
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             URL.revokeObjectURL(url);
-            
             callback(canvas);
         };
         img.src = url;
@@ -313,8 +492,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleDownloadImage(container) {
         createSvgCanvas(container, (canvas) => {
-            const imgURL = canvas.toDataURL("image/png");
-            triggerDownload(imgURL, 'expression.png');
+            triggerDownload(canvas.toDataURL('image/png'), 'expression.png');
         });
     }
 
@@ -322,49 +500,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const svgString = getSvgString(container);
         if (!svgString) return;
 
-        // Create a temporary element to hold the SVG so we can parse its dimensions
         const tempDiv = document.createElement('div');
-        // Hide it so it doesn't flash on screen
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
+        tempDiv.style.cssText = 'position:absolute;left:-9999px';
         tempDiv.innerHTML = svgString;
         document.body.appendChild(tempDiv);
-        
+
         const svgElement = tempDiv.querySelector('svg');
-        
-        const width = parseFloat(svgElement.getAttribute('width'));
-        const height = parseFloat(svgElement.getAttribute('height'));
+        const width      = parseFloat(svgElement.getAttribute('width'));
+        const height     = parseFloat(svgElement.getAttribute('height'));
+        const padding    = 20;
+        const { jsPDF }  = window.jspdf;
+        const pdf        = new jsPDF('l', 'pt', [width + padding * 2, height + padding * 2]);
 
-        const { jsPDF } = window.jspdf;
-        const padding = 20;
-        const pdfWidth = width + padding * 2;
-        const pdfHeight = height + padding * 2;
-
-        // Use pt for exact 1:1 mapping with the SVG pixel coordinates
-        const pdf = new jsPDF('l', 'pt', [pdfWidth, pdfHeight]);
-        
         try {
-            await pdf.svg(svgElement, {
-                x: padding,
-                y: padding,
-                width: width,
-                height: height
-            });
+            await pdf.svg(svgElement, { x: padding, y: padding, width, height });
             pdf.save('expression.pdf');
         } catch (err) {
-            console.error('Error generating PDF:', err);
-            alert('Failed to generate vector PDF: ' + err.message);
+            showToast('Failed to generate PDF: ' + err.message, true);
         } finally {
             document.body.removeChild(tempDiv);
         }
     }
 
     function triggerDownload(url, filename) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        const a = document.createElement('a');
+        a.href     = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }
 });
