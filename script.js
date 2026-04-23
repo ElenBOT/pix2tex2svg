@@ -3,7 +3,7 @@
 // Forked from latex2svg; adds OCR (paste / upload) and drag-to-reorder.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const API_BASE = 'http://127.0.0.1:7070';
+const API_BASE = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     const rowsContainer        = document.getElementById('rows-container');
