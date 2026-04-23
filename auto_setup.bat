@@ -42,12 +42,12 @@ if defined CONDA_ROOT (
 :: Current directory
 echo.
 echo [INFO] Current directory: %cd%
-pause
+
 
 :: Initialize Conda
 echo [INFO] Initializing Conda...
 CALL "%CONDA_ROOT%\condabin\conda.bat" activate base
-pause
+
 
 :: Check or create environment
 echo.
@@ -65,7 +65,7 @@ if errorlevel 1 (
 ) else (
     echo [INFO] Environment 'pix2tex2svg' already exists.
 )
-pause
+
 
 :: Activate environment
 color 07
@@ -77,7 +77,7 @@ if errorlevel 1 (
     pause
     exit /b
 )
-pause
+
 
 :: Git check
 echo.
@@ -93,7 +93,7 @@ if errorlevel 1 (
     echo [INFO] Updating repository...
     git pull
 )
-pause
+
 
 :: Install packages
 echo.
