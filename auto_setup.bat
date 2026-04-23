@@ -106,7 +106,7 @@ if errorlevel 1 (
     echo [4/4] Activating environment and installing Python packages...
     call conda activate pix2tex2svg
     
-    pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart
+    pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
     if errorlevel 1 (
         echo.
         echo  ERROR: pip install failed.

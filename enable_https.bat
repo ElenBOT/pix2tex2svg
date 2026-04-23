@@ -8,51 +8,62 @@ echo   pix2tex2svg ^| Enable HTTPS Setup
 echo  =================================================
 echo.
 
-set "EXE_PATH="
+:: -- Find Conda ----------------------------------------------------------------
+set CONDA_ROOT=
 
-:: Check 1: Is it already on PATH?
-where openssl >nul 2>nul
-if !errorlevel! == 0 (
-    set "EXE_PATH=openssl"
-)
-
-:: Check 2: Common Git install paths
-if "!EXE_PATH!" == "" (
-    if exist "C:\Program Files\Git\usr\bin\openssl.exe" (
-        set "EXE_PATH=C:\Program Files\Git\usr\bin\openssl.exe"
+for %%P in (
+    "%USERPROFILE%\miniconda3"
+    "%USERPROFILE%\Miniconda3"
+    "%USERPROFILE%\anaconda3"
+    "%USERPROFILE%\Anaconda3"
+    "%LOCALAPPDATA%\miniconda3"
+    "%LOCALAPPDATA%\Miniconda3"
+    "%LOCALAPPDATA%\anaconda3"
+    "%LOCALAPPDATA%\Anaconda3"
+    "C:\miniconda3"
+    "C:\Miniconda3"
+    "C:\anaconda3"
+    "C:\Anaconda3"
+    "C:\ProgramData\miniconda3"
+    "C:\ProgramData\Miniconda3"
+    "C:\ProgramData\anaconda3"
+    "C:\ProgramData\Anaconda3"
+) do (
+    if exist "%%~P\Scripts\conda.exe" (
+        set "CONDA_ROOT=%%~P"
+        goto :found_conda
     )
 )
-if "!EXE_PATH!" == "" (
-    if exist "C:\Program Files (x86)\Git\usr\bin\openssl.exe" (
-        set "EXE_PATH=C:\Program Files (x86)\Git\usr\bin\openssl.exe"
-    )
-)
 
-if "!EXE_PATH!" == "" (
-    echo  ERROR: openssl.exe was not found on your system.
-    echo  Please install Git for Windows (https://git-scm.com) 
-    echo  to get the required encryption tools.
+echo.
+echo  ERROR: Conda not found. Please run auto_setup.bat first.
+echo.
+pause & exit /b 1
+
+:found_conda
+call "%CONDA_ROOT%\Scripts\activate.bat" "%CONDA_ROOT%"
+call conda activate pix2tex2svg
+
+if errorlevel 1 (
     echo.
-    pause
-    exit /b 1
+    echo  ERROR: Could not activate "pix2tex2svg" environment.
+    echo  Run auto_setup.bat first to install dependencies.
+    echo.
+    pause & exit /b 1
 )
 
-echo  Found OpenSSL at: !EXE_PATH!
-echo.
-echo  [1/2] Generating self-signed certificate (cert.pem and key.pem)...
-echo.
-
-"!EXE_PATH!" req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=pix2tex2svg"
+:: -- Run Python script to generate certs ---------------------------------------
+python generate_certs.py
 
 if exist cert.pem (
     echo.
     echo  =================================================
-    echo   SUCCESS! Certificates have been generated.
+    echo   SUCCESS! HTTPS is now enabled.
     echo  =================================================
     echo.
-    echo  1. Close your current server window.
+    echo  1. Close your current server window (if open).
     echo  2. Run start_server.bat again.
-    echo  3. Access the site via: https://192.168.x.x:7070
+    echo  3. Access via: https://192.168.x.x:7070
     echo.
 ) else (
     echo.
@@ -61,4 +72,5 @@ if exist cert.pem (
 )
 
 pause
+
 
