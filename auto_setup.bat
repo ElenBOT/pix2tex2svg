@@ -91,7 +91,7 @@ echo.
 
 call "%CONDA_ROOT%\Scripts\activate.bat" "%CONDA_ROOT%"
 
-conda create -n pix2tex2svg python=3.11 -y
+call conda create -n pix2tex2svg python=3.11 -y
 if errorlevel 1 (
     echo.
     echo  ERROR: Failed to create conda environment.
