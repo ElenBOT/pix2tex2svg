@@ -70,21 +70,7 @@ echo.
 echo  Your LAN address(es) — share one with clients:
 echo.
 
-set FOUND_IP=0
-for /f "tokens=2 delims=:" %%A in ('ipconfig ^| findstr /C:"IPv4 Address"') do (
-    set "RAW=%%A"
-    :: trim leading space
-    set "ADDR=!RAW: =!"
-    :: skip loopback
-    if not "!ADDR:~0,3!"=="127" (
-        echo      http://!ADDR!:7070
-        set FOUND_IP=1
-    )
-)
-
-if "!FOUND_IP!"=="0" (
-    echo      ^(Could not detect LAN IP — try ipconfig manually^)
-)
+python -c "import socket; ips=[ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith('127.')]; print('\n'.join(['      http://'+ip+':7070' for ip in ips]) if ips else '      (Could not detect LAN IP)')"
 
 echo.
 echo  Open the above URL on any device on the same Wi-Fi.
