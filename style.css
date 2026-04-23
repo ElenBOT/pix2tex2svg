@@ -273,7 +273,7 @@ mjx-assistive-mml { display: none !important; }
 }
 
 .row-actions-right {
-    /* default right side */
+    border-left: 1px solid var(--panel-border);
 }
 
 .action-btn {
@@ -455,4 +455,49 @@ mjx-assistive-mml { display: none !important; }
 
 .toast.error {
     background: #991b1b;
+}
+
+/* Paste Info Icon */
+.ocr-paste-btn {
+    position: relative;
+}
+
+.paste-info-icon {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 14px;
+    height: 14px;
+    background: var(--ocr-color);
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    border-radius: 50%;
+    display: none; /* Hidden by default, shown if not secure */
+    align-items: center;
+    justify-content: center;
+    cursor: help;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.ocr-paste-btn.insecure .paste-info-icon {
+    display: flex;
+}
+
+.paste-info-icon:hover::after {
+    content: "Clipboard API (Paste Button) requires a Secure Context (HTTPS or localhost). On LAN, please use Ctrl+V inside the input box instead.";
+    position: absolute;
+    left: 20px;
+    top: 0;
+    width: 200px;
+    background: #1f2937;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    z-index: 100;
+    pointer-events: none;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }

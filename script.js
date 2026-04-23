@@ -241,6 +241,10 @@ document.addEventListener('DOMContentLoaded', () => {
         setupDragHandle(rowEl, dragHandleBtn);
 
         // ── OCR: paste from clipboard (Button) ───────────────────────────────
+        if (!window.isSecureContext) {
+            ocrPasteBtn.classList.add('insecure');
+        }
+
         ocrPasteBtn.addEventListener('click', async () => {
             try {
                 if (!navigator.clipboard || !navigator.clipboard.read) {
@@ -264,7 +268,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('No image found in clipboard', true);
                 }
             } catch (err) {
-                showToast('Clipboard read denied: ' + err.message, true);
+                // If it's a security error or unsupported, suggest Ctrl+V
+                if (!window.isSecureContext) {
+                    showToast('Button paste requires HTTPS or localhost. Try pressing Ctrl+V inside the text box instead!', true);
+                } else {
+                    showToast('Clipboard read denied: ' + err.message, true);
+                }
             }
         });
 
