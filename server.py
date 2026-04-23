@@ -117,12 +117,29 @@ def get_all_local_ips():
 
 if __name__ == "__main__":
     import uvicorn
+    import os
+    
     ips = get_all_local_ips()
+    
+    # Check for SSL certificates
+    ssl_key = "key.pem"
+    ssl_cert = "cert.pem"
+    use_ssl = os.path.exists(ssl_key) and os.path.exists(ssl_cert)
+    protocol = "https" if use_ssl else "http"
+    
     print("\n" + "="*50)
-    print(" pix2tex2svg | Server Running")
+    print(f" pix2tex2svg | Server Running ({protocol.upper()})")
     print("="*50)
     print("\n Open one of these URLs on any device on your Wi-Fi:\n")
     for ip in ips:
-        print(f"     http://{ip}:7070")
+        print(f"     {protocol}://{ip}:7070")
+    
+    if use_ssl:
+        print("\n [SSL Active] Browser will show a warning. Proceed manually.")
+    
     print("\n" + "="*50 + "\n")
-    uvicorn.run("server:app", host="0.0.0.0", port=7070, reload=False)
+    
+    if use_ssl:
+        uvicorn.run("server:app", host="0.0.0.0", port=7070, reload=False, ssl_keyfile=ssl_key, ssl_certfile=ssl_cert)
+    else:
+        uvicorn.run("server:app", host="0.0.0.0", port=7070, reload=False)

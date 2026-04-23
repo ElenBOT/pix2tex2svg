@@ -39,3 +39,14 @@ No installation needed on client devices! Simply make sure you are on the **same
 http://<SERVER-IP>:7070
 ```
 *(A green "OCR server online" dot in the top bar will confirm the connection).*
+
+---
+
+### Enable HTTPS (for LAN Paste Button)
+Browsers block the **Paste** button on non-secure (HTTP) networks. To fix this:
+1. Double-click `enable_https.bat` on the server machine.
+2. Restart the server via `start_server.bat`.
+3. Access via `https://<SERVER-IP>:7070`.
+4. Your browser will show a warning ("Your connection is not private") — click **Advanced** -> **Proceed anyway**. 
+
+The Paste button will now work perfectly!
