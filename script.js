@@ -240,11 +240,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Drag-to-reorder
         setupDragHandle(rowEl, dragHandleBtn);
 
-        // ── OCR: paste from clipboard ────────────────────────────────────────
+        // ── OCR: paste from clipboard (Button) ───────────────────────────────
         ocrPasteBtn.addEventListener('click', async () => {
             try {
                 if (!navigator.clipboard || !navigator.clipboard.read) {
-                    showToast('Clipboard API not supported in this browser', true);
+                    showToast('Button paste requires HTTPS or localhost. Try pressing Ctrl+V inside the text box instead!', true);
                     return;
                 }
                 const items = await navigator.clipboard.read();
@@ -264,8 +264,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast('No image found in clipboard', true);
                 }
             } catch (err) {
-                // Browser may deny clipboard read permission
                 showToast('Clipboard read denied: ' + err.message, true);
+            }
+        });
+
+        // ── OCR: paste from clipboard (Ctrl+V / Native Paste) ───────────────
+        // This works even on HTTP LAN connections where navigator.clipboard is blocked!
+        input.addEventListener('paste', async (e) => {
+            const items = (e.clipboardData || window.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image/') === 0) {
+                    e.preventDefault(); // Stop default text paste
+                    const blob = item.getAsFile();
+                    await runOcrOnFile(blob, input, ocrStatus, ocrPasteBtn);
+                    break;
+                }
             }
         });
 
