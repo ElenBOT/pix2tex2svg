@@ -433,31 +433,57 @@ document.addEventListener('DOMContentLoaded', () => {
         return '<?xml version="1.0" encoding="UTF-8" standalone="no" ?>\n' + svgString;
     }
 
+    // Helper to copy text to clipboard (works in insecure contexts)
+    function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(text);
+        }
+        // Fallback for non-HTTPS (insecure context)
+        return new Promise((resolve, reject) => {
+            try {
+                const textArea = document.createElement("textarea");
+                textArea.value = text;
+                textArea.style.position = "fixed"; // avoid scrolling to bottom
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                const successful = document.execCommand('copy');
+                document.body.removeChild(textArea);
+                if (successful) resolve();
+                else reject(new Error('execCommand failed'));
+            } catch (err) {
+                reject(err);
+            }
+        });
+    }
+
     async function handleCopySvg(container, btn) {
         const svgString = getSvgString(container);
         if (!svgString) return;
 
         try {
-            if (window.ClipboardItem) {
+            // Try modern Clipboard API first (for rich format support if possible)
+            if (window.isSecureContext && window.ClipboardItem) {
                 const svgBlob = new Blob([svgString], { type: 'image/svg+xml' });
                 await navigator.clipboard.write([new ClipboardItem({ 'image/svg+xml': svgBlob })]);
+                showToast('SVG copied!');
             } else {
-                await navigator.clipboard.writeText(svgString);
+                // Fallback to text copy
+                await copyToClipboard(svgString);
+                showToast('SVG copied as text!');
             }
             flashSuccess(btn);
-            showToast('SVG copied!');
         } catch (err) {
-            try {
-                await navigator.clipboard.writeText(svgString);
-                flashSuccess(btn);
-                showToast('SVG copied as text!');
-            } catch {
-                showToast('Failed to copy SVG', true);
-            }
+            showToast('Failed to copy SVG: ' + err.message, true);
         }
     }
 
     async function handleCopyPng(container, btn) {
+        if (!window.isSecureContext) {
+            showToast('Copying PNG images requires HTTPS or localhost. Please use Download instead.', true);
+            return;
+        }
+
         createSvgCanvas(container, async (canvas) => {
             try {
                 canvas.toBlob(async (blob) => {
