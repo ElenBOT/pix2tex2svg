@@ -83,37 +83,41 @@ pause & exit /b 1
 echo  Found Conda at: %CONDA_ROOT%
 echo.
 
-:: -- Step 3: Create the conda environment -------------------------------------
-
-echo [3/4] Creating conda environment "pix2tex2svg" (Python 3.11)...
-echo  (This may take a few minutes on first run)
-echo.
+:: -- Step 3 & 4: Check or create conda environment ------------------------------
 
 call "%CONDA_ROOT%\Scripts\activate.bat" "%CONDA_ROOT%"
 
-call conda create -n pix2tex2svg python=3.11 -y
+echo [3/4] Checking Conda environment "pix2tex2svg"...
+call conda env list | findstr "pix2tex2svg" >nul
 if errorlevel 1 (
     echo.
-    echo  ERROR: Failed to create conda environment.
+    echo  Environment not found. Creating it (Python 3.11)...
+    echo  (This may take a few minutes on first run)
     echo.
-    pause & exit /b 1
-)
-
-call conda activate pix2tex2svg
-
-:: -- Step 4: Install Python packages ------------------------------------------
-
-echo.
-echo [4/4] Installing Python packages...
-echo  (pix2tex model weights ~1.5 GB will download on first OCR use)
-echo.
-
-pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart
-if errorlevel 1 (
+    call conda create -n pix2tex2svg python=3.11 -y
+    if errorlevel 1 (
+        echo.
+        echo  ERROR: Failed to create conda environment.
+        echo.
+        pause & exit /b 1
+    )
+    
     echo.
-    echo  ERROR: pip install failed.
+    echo [4/4] Activating environment and installing Python packages...
+    call conda activate pix2tex2svg
+    
+    pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart
+    if errorlevel 1 (
+        echo.
+        echo  ERROR: pip install failed.
+        echo.
+        pause & exit /b 1
+    )
+) else (
     echo.
-    pause & exit /b 1
+    echo  Environment 'pix2tex2svg' already exists. Skipping creation and installation.
+    echo [4/4] Packages are assumed to be already installed.
+    echo.
 )
 
 :: -- Done ----------------------------------------------------------------------
