@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-title pix2tex2svg — Auto Setup
+title pix2tex2svg - Auto Setup
 
 echo.
 echo  =================================================
@@ -8,7 +8,7 @@ echo   pix2tex2svg  ^|  Auto Setup
 echo  =================================================
 echo.
 
-:: ── Step 1: Locate or clone the repo ─────────────────────────────────────────
+:: -- Step 1: Locate or clone the repo -----------------------------------------
 ::
 :: If this .bat is already inside the cloned repo (i.e. server.py exists next
 :: to it), stay here.  Otherwise clone into a sibling folder.
@@ -40,7 +40,7 @@ if exist "%~dp0server.py" (
 echo  Repo folder: %CD%
 echo.
 
-:: ── Step 2: Find Conda ────────────────────────────────────────────────────────
+:: -- Step 2: Find Conda --------------------------------------------------------
 ::
 :: Searches the most common install locations for Miniconda / Anaconda.
 
@@ -83,7 +83,7 @@ pause & exit /b 1
 echo  Found Conda at: %CONDA_ROOT%
 echo.
 
-:: ── Step 3: Create the conda environment ─────────────────────────────────────
+:: -- Step 3: Create the conda environment -------------------------------------
 
 echo [3/4] Creating conda environment "pix2tex2svg" (Python 3.11)...
 echo  (This may take a few minutes on first run)
@@ -101,7 +101,7 @@ if errorlevel 1 (
 
 call conda activate pix2tex2svg
 
-:: ── Step 4: Install Python packages ──────────────────────────────────────────
+:: -- Step 4: Install Python packages ------------------------------------------
 
 echo.
 echo [4/4] Installing Python packages...
@@ -116,7 +116,7 @@ if errorlevel 1 (
     pause & exit /b 1
 )
 
-:: ── Done ──────────────────────────────────────────────────────────────────────
+:: -- Done ----------------------------------------------------------------------
 
 echo.
 echo  =================================================

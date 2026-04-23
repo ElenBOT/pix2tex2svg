@@ -1,8 +1,8 @@
 @echo off
 setlocal enabledelayedexpansion
-title pix2tex2svg — Server
+title pix2tex2svg - Server
 
-:: ── Locate repo root (same folder as this .bat) ───────────────────────────────
+:: -- Locate repo root (same folder as this .bat) -------------------------------
 cd /d "%~dp0"
 
 if not exist "server.py" (
@@ -13,7 +13,7 @@ if not exist "server.py" (
     pause & exit /b 1
 )
 
-:: ── Find Conda ────────────────────────────────────────────────────────────────
+:: -- Find Conda ----------------------------------------------------------------
 set CONDA_ROOT=
 
 for %%P in (
@@ -63,7 +63,7 @@ echo  This window must stay open while the server is running.
 echo  Press Ctrl+C to stop.
 echo.
 
-:: ── Launch server ─────────────────────────────────────────────────────────────
+:: -- Launch server -------------------------------------------------------------
 python server.py
 
 :: If server exits, pause so the window stays open to show any error
