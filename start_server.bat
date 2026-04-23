@@ -57,27 +57,10 @@ if errorlevel 1 (
     pause & exit /b 1
 )
 
-:: ── Collect LAN IP addresses ──────────────────────────────────────────────────
-::
-:: ipconfig lists multiple adapters; we pick lines that contain "IPv4 Address"
-:: and skip loopback (127.x).
-
 echo.
-echo  =================================================
-echo   pix2tex2svg  ^|  Starting Server
-echo  =================================================
-echo.
-echo  Your LAN address(es) — share one with clients:
-echo.
-
-python -c "import socket; ips=[ip for ip in socket.gethostbyname_ex(socket.gethostname())[2] if not ip.startswith('127.')]; print('\n'.join(['      http://'+ip+':7070' for ip in ips]) if ips else '      (Could not detect LAN IP)')"
-
-echo.
-echo  Open the above URL on any device on the same Wi-Fi.
+echo  Starting server...
 echo  This window must stay open while the server is running.
 echo  Press Ctrl+C to stop.
-echo.
-echo  -------------------------------------------------
 echo.
 
 :: ── Launch server ─────────────────────────────────────────────────────────────

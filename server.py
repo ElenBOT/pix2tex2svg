@@ -92,6 +92,22 @@ async def health():
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 
+def get_local_ip():
+    """Returns the local IP address of the current machine."""
+    import socket
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return "127.0.0.1"
+
 if __name__ == "__main__":
     import uvicorn
+    ip = get_local_ip()
+    print("\n" + "="*50)
+    print(" pix2tex2svg | Server Running")
+    print("="*50)
+    print(f"\n Open this URL on any device on your Wi-Fi:\n\n     http://{ip}:7070\n")
+    print("="*50 + "\n")
     uvicorn.run("server:app", host="0.0.0.0", port=7070, reload=False)
