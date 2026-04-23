@@ -11,42 +11,35 @@ cd pix2tex2svg
 ## 2. Setup
 
 **Windows (Automatic):**
-Double-click `auto_setup.bat`. 
-*(Requires Miniconda/Anaconda. It automatically creates a `pix2tex2svg` env and installs dependencies).*
+1. Double-click `auto_setup.bat`. 
+   *(Creates a `pix2tex2svg` env and installs dependencies).*
+2. **(Optional but Recommended)** Double-click `enable_https.bat`.
+   *This enables the **Paste** button on LAN devices by setting up a local SSL certificate.*
 
 **Linux / macOS (Manual):**
 ```bash
-pip install "pix2tex[api]" uvicorn fastapi pillow python-multipart
+pip install "pix2tex[api]" uvicorn fastapi pillow python-multipart cryptography
 ```
 
 ## 3. Start Server
 
 **Windows:**
-Double-click `start_server.bat`. It will launch the server and print your LAN IP automatically.
+Double-click `start_server.bat`. 
 
 **Linux / macOS:**
 ```bash
 python server.py
-# Find your IP using: hostname -I (Linux) or ipconfig getifaddr en0 (macOS)
 ```
 
 > **Note:** The first time you run an OCR request, it will automatically download the model weights (~1.5 GB).
 
 ## 4. Client Connect
 
-No installation needed on client devices! Simply make sure you are on the **same Wi-Fi / LAN** as the server machine, open a browser, and go to:
+Make sure you are on the **same Wi-Fi / LAN** as the server machine, and go to the URL shown in the server console:
 ```
-http://<SERVER-IP>:7070
+http://<SERVER-IP>:7070   (Standard)
+https://<SERVER-IP>:7070  (If you ran enable_https.bat)
 ```
-*(A green "OCR server online" dot in the top bar will confirm the connection).*
 
----
+> **Note on HTTPS:** If using HTTPS, your browser will show a "Not Private" warning. Click **Advanced** -> **Proceed anyway**. This is required for the browser to allow the **Paste** button on LAN.
 
-### Enable HTTPS (for LAN Paste Button)
-Browsers block the **Paste** button on non-secure (HTTP) networks. To fix this:
-1. Double-click `enable_https.bat` on the server machine.
-2. Restart the server via `start_server.bat`.
-3. Access via `https://<SERVER-IP>:7070`.
-4. Your browser will show a warning ("Your connection is not private") — click **Advanced** -> **Proceed anyway**. 
-
-The Paste button will now work perfectly!
