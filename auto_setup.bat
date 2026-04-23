@@ -1,86 +1,108 @@
 @echo off
-setlocal
-title pix2tex2svg - Auto Setup
+setlocal EnableDelayedExpansion
 
+:: Title and heading
+color 03
+echo ===============================================
+echo            PIX2TEX2SVG AUTO SETUP           
+echo ===============================================
 echo.
-echo  =================================================
-echo   pix2tex2svg  ^|  Auto Setup
-echo  =================================================
-echo.
-
-:: -- Step 1: Update code --
-if exist .git (
-    echo [1/4] Updating repository...
-    git pull
-)
-echo.
-
-:: -- Step 2: Find Conda --
-echo [2/4] Searching for Conda...
-set "CONDA_PATH="
-
-:: Try PATH first
-where conda >nul 2>&1
-if %errorlevel% == 0 (
-    for /f "tokens=*" %%i in ('where conda') do (
-        set "TEMP_PATH=%%~dpi"
-        set "CONDA_PATH=!TEMP_PATH!\.."
-    )
-)
-
-:: Common install paths
-if "%CONDA_PATH%"=="" (
-    if exist "%USERPROFILE%\miniconda3\Scripts\conda.exe" set "CONDA_PATH=%USERPROFILE%\miniconda3"
-    if exist "%USERPROFILE%\anaconda3\Scripts\conda.exe" set "CONDA_PATH=%USERPROFILE%\anaconda3"
-    if exist "%LOCALAPPDATA%\miniconda3\Scripts\conda.exe" set "CONDA_PATH=%LOCALAPPDATA%\miniconda3"
-    if exist "C:\miniconda3\Scripts\conda.exe" set "CONDA_PATH=C:\miniconda3"
-    if exist "C:\anaconda3\Scripts\conda.exe" set "CONDA_PATH=C:\anaconda3"
-    if exist "C:\ProgramData\miniconda3\Scripts\conda.exe" set "CONDA_PATH=C:\ProgramData\miniconda3"
-    if exist "C:\ProgramData\Anaconda3\Scripts\conda.exe" set "CONDA_PATH=C:\ProgramData\Anaconda3"
-)
-
-if "%CONDA_PATH%"=="" (
-    echo  ERROR: Could not find a Conda installation.
-    echo  Please install Miniconda or Anaconda then re-run this script.
-    echo.
-    pause
-    exit /b 1
-)
-echo  Found Conda at: %CONDA_PATH%
-echo.
-
-:: -- Step 3: Activate and Check Env --
-echo [3/4] Setting up environment...
-call "%CONDA_PATH%\Scripts\activate.bat" "%CONDA_PATH%"
-
-:: Check if environment exists
-call conda activate pix2tex2svg 2>nul
-if errorlevel 1 (
-    echo  Creating environment 'pix2tex2svg' (Python 3.11)...
-    call conda create -n pix2tex2svg python=3.11 -y
-    call conda activate pix2tex2svg
-) else (
-    echo  Environment 'pix2tex2svg' already exists.
-)
-echo.
-
-:: -- Step 4: Install --
-echo [4/4] Installing/Updating packages...
-pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
-if errorlevel 1 (
-    echo.
-    echo  ERROR: Pip install failed.
-    echo.
-    pause
-    exit /b 1
-)
-
-echo.
-echo  =================================================
-echo   Setup complete! Run start_server.bat to begin.
-echo  =================================================
+echo This script will:
+echo 1. Setup anaconda env named `pix2tex2svg`.
+echo 2. Update repository with latest code.
+echo 3. Install required Python packages.
 echo.
 pause
+echo.
+color 07
+
+:: Conda detection
+set "CONDA_ANACONDA=%USERPROFILE%\anaconda3"
+set "CONDA_MINICONDA=%USERPROFILE%\miniconda3"
+set "CONDA_PROGDATA=C:\ProgramData\Anaconda3"
+set "CONDA_ROOT="
+
+if exist "%CONDA_ANACONDA%" (
+    set "CONDA_ROOT=%CONDA_ANACONDA%"
+) else if exist "%CONDA_MINICONDA%" (
+    set "CONDA_ROOT=%CONDA_MINICONDA%"
+) else if exist "%CONDA_PROGDATA%" (
+    set "CONDA_ROOT=%CONDA_PROGDATA%"
+)
+
+if defined CONDA_ROOT (
+    echo [INFO] Found Conda at: %CONDA_ROOT%
+) else (
+    color 0C
+    echo [ERROR] Conda installation not found!
+    pause
+    exit /b
+)
+
+:: Git Update (Step 1)
+echo.
+echo [INFO] Updating repository...
+if exist .git (
+    git pull
+) else (
+    echo [WARNING] .git not found, skipping update.
+)
+
+:: Initialize Conda (Step 2)
+echo.
+echo [INFO] Initializing Conda...
+CALL "%CONDA_ROOT%\condabin\conda.bat" activate base
+
+:: Check or create environment (Step 3)
+echo.
+echo [INFO] Checking Conda environment 'pix2tex2svg'...
+conda env list | findstr "pix2tex2svg" >nul
+if errorlevel 1 (
+    echo [INFO] Creating new environment 'pix2tex2svg' (Python 3.11)...
+    CALL conda create -y -n pix2tex2svg python=3.11
+    if errorlevel 1 (
+        color 0C
+        echo [ERROR] Failed to create environment!
+        pause
+        exit /b
+    )
+) else (
+    echo [INFO] Environment 'pix2tex2svg' already exists.
+)
+
+:: Activate environment
+color 07
+echo [INFO] Activating 'pix2tex2svg'...
+CALL conda activate pix2tex2svg
+if errorlevel 1 (
+    color 0C
+    echo [ERROR] Failed to activate environment!
+    pause
+    exit /b
+)
+
+:: Install packages (Step 4)
+echo.
+echo [INFO] Installing/Updating Python packages...
+:: Note: cryptography added for HTTPS support
+pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
+if errorlevel 1 (
+    color 0E
+    echo [WARNING] Some packages may have failed to install.
+) else (
+    echo [INFO] Packages updated successfully.
+)
+
+echo.
+echo ==================================================
+echo           SETUP COMPLETE - READY TO USE           
+echo ==================================================
+echo.
+echo To start, run start_server.bat
+echo.
+color 0A
 endlocal
+pause
+
 
 
