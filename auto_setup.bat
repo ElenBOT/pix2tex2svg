@@ -7,10 +7,10 @@ echo ===============================================
 echo            PIX2TEX2SVG AUTO SETUP           
 echo ===============================================
 echo.
-echo This script will:
-echo 1. Setup anaconda env named `pix2tex2svg`.
-echo 2. Update repository with latest code.
-echo 3. Install required Python packages.
+echo After continue, this bat file will:
+echo 1. setup anaconda env named `pix2tex2svg`.
+echo 2. Update repository with git pull.
+echo 3. pip install modules, to the env.
 echo.
 pause
 echo.
@@ -39,26 +39,22 @@ if defined CONDA_ROOT (
     exit /b
 )
 
-:: Git Update (Step 1)
+:: Current directory
 echo.
-echo [INFO] Updating repository...
-if exist .git (
-    git pull
-) else (
-    echo [WARNING] .git not found, skipping update.
-)
+echo [INFO] Current directory: %cd%
+pause
 
-:: Initialize Conda (Step 2)
-echo.
+:: Initialize Conda
 echo [INFO] Initializing Conda...
 CALL "%CONDA_ROOT%\condabin\conda.bat" activate base
+pause
 
-:: Check or create environment (Step 3)
+:: Check or create environment
 echo.
 echo [INFO] Checking Conda environment 'pix2tex2svg'...
 conda env list | findstr "pix2tex2svg" >nul
 if errorlevel 1 (
-    echo [INFO] Creating new environment 'pix2tex2svg' (Python 3.11)...
+    echo [INFO] Creating new environment 'pix2tex2svg'...
     CALL conda create -y -n pix2tex2svg python=3.11
     if errorlevel 1 (
         color 0C
@@ -69,6 +65,7 @@ if errorlevel 1 (
 ) else (
     echo [INFO] Environment 'pix2tex2svg' already exists.
 )
+pause
 
 :: Activate environment
 color 07
@@ -80,11 +77,27 @@ if errorlevel 1 (
     pause
     exit /b
 )
+pause
 
-:: Install packages (Step 4)
+:: Git check
+echo.
+echo [INFO] Checking for Git...
+where git >nul 2>nul
+if errorlevel 1 (
+    color 0C
+    echo [ERROR] Git is not installed or not in PATH.
+    pause
+    exit /b
+) else (
+    echo [INFO] Git is available.
+    echo [INFO] Updating repository...
+    git pull
+)
+pause
+
+:: Install packages
 echo.
 echo [INFO] Installing/Updating Python packages...
-:: Note: cryptography added for HTTPS support
 pip install "pix2tex[api]" fastapi uvicorn pillow python-multipart cryptography
 if errorlevel 1 (
     color 0E
@@ -97,12 +110,10 @@ echo.
 echo ==================================================
 echo           SETUP COMPLETE - READY TO USE           
 echo ==================================================
-echo.
-echo To start, run start_server.bat
-echo.
 color 0A
 endlocal
 pause
+
 
 
 
