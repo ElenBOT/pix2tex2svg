@@ -92,22 +92,37 @@ async def health():
 app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 
-def get_local_ip():
-    """Returns the local IP address of the current machine."""
+def get_all_local_ips():
+    """Returns all local IP addresses of the current machine."""
     import socket
+    ips = []
     try:
+        # This grabs all IPs on Windows natively
+        host_name = socket.gethostname()
+        ips.extend(socket.gethostbyname_ex(host_name)[2])
+    except Exception:
+        pass
+    
+    try:
+        # Fallback/guarantee for primary routed IP
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
             s.connect(("8.8.8.8", 80))
-            return s.getsockname()[0]
+            ips.append(s.getsockname()[0])
     except Exception:
-        return "127.0.0.1"
+        pass
+
+    # Filter loopbacks and deduplicate
+    valid_ips = list(set([ip for ip in ips if not ip.startswith("127.")]))
+    return valid_ips if valid_ips else ["127.0.0.1"]
 
 if __name__ == "__main__":
     import uvicorn
-    ip = get_local_ip()
+    ips = get_all_local_ips()
     print("\n" + "="*50)
     print(" pix2tex2svg | Server Running")
     print("="*50)
-    print(f"\n Open this URL on any device on your Wi-Fi:\n\n     http://{ip}:7070\n")
-    print("="*50 + "\n")
+    print("\n Open one of these URLs on any device on your Wi-Fi:\n")
+    for ip in ips:
+        print(f"     http://{ip}:7070")
+    print("\n" + "="*50 + "\n")
     uvicorn.run("server:app", host="0.0.0.0", port=7070, reload=False)
