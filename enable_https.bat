@@ -1,49 +1,64 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 title pix2tex2svg - Enable HTTPS
 
-echo =================================================
-echo  pix2tex2svg ^| Enable HTTPS (Self-Signed)
-echo =================================================
 echo.
-echo This script will generate a self-signed certificate.
-echo This allows the Clipboard API (Paste button) to work on LAN devices.
-echo.
-echo NOTE: Browsers will show a "Your connection is not private" warning.
-echo You must click "Advanced" -> "Proceed anyway" on your devices.
+echo  =================================================
+echo   pix2tex2svg ^| Enable HTTPS Setup
+echo  =================================================
 echo.
 
-:: Find openssl (usually in Git/usr/bin)
-set OPENSSL_EXE=
+set "EXE_PATH="
+
+:: Check 1: Is it already on PATH?
 where openssl >nul 2>nul
-if %errorlevel% == 0 (
-    set OPENSSL_EXE=openssl
-) else (
-    if exist "C:\Program Files\Git\usr\bin\openssl.exe" set OPENSSL_EXE="C:\Program Files\Git\usr\bin\openssl.exe"
-    if exist "C:\Program Files (x86)\Git\usr\bin\openssl.exe" set OPENSSL_EXE="C:\Program Files (x86)\Git\usr\bin\openssl.exe"
+if !errorlevel! == 0 (
+    set "EXE_PATH=openssl"
 )
 
-if "%OPENSSL_EXE%" == "" (
-    echo ERROR: openssl not found. 
-    echo Please install Git for Windows to get openssl.
+:: Check 2: Common Git install paths
+if "!EXE_PATH!" == "" (
+    if exist "C:\Program Files\Git\usr\bin\openssl.exe" (
+        set "EXE_PATH=C:\Program Files\Git\usr\bin\openssl.exe"
+    )
+)
+if "!EXE_PATH!" == "" (
+    if exist "C:\Program Files (x86)\Git\usr\bin\openssl.exe" (
+        set "EXE_PATH=C:\Program Files (x86)\Git\usr\bin\openssl.exe"
+    )
+)
+
+if "!EXE_PATH!" == "" (
+    echo  ERROR: openssl.exe was not found on your system.
+    echo  Please install Git for Windows (https://git-scm.com) 
+    echo  to get the required encryption tools.
+    echo.
     pause
     exit /b 1
 )
 
-echo [1/2] Generating certificate and key...
-%OPENSSL_EXE% req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=pix2tex2svg"
+echo  Found OpenSSL at: !EXE_PATH!
+echo.
+echo  [1/2] Generating self-signed certificate (cert.pem and key.pem)...
+echo.
 
-if %errorlevel% == 0 (
+"!EXE_PATH!" req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -sha256 -days 3650 -nodes -subj "/CN=pix2tex2svg"
+
+if exist cert.pem (
     echo.
-    echo Success! cert.pem and key.pem have been generated.
+    echo  =================================================
+    echo   SUCCESS! Certificates have been generated.
+    echo  =================================================
     echo.
-    echo Now run start_server.bat. It will automatically detect 
-    echo these files and start in HTTPS mode.
+    echo  1. Close your current server window.
+    echo  2. Run start_server.bat again.
+    echo  3. Access the site via: https://192.168.x.x:7070
     echo.
 ) else (
     echo.
-    echo ERROR: Failed to generate certificates.
+    echo  ERROR: Failed to create certificates.
     echo.
 )
 
 pause
+
