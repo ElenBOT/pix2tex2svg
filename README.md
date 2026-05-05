@@ -2,6 +2,8 @@
 
 **Image → LaTeX → SVG** — paste or upload an equation screenshot, OCR it to LaTeX, then export as SVG/PNG/PDF. Runs entirely on your local machine or LAN.
 
+<img width="975" height="539" alt="image" src="https://github.com/user-attachments/assets/a8de54a5-e64b-44fa-a286-1e132069b460" />
+
 ## 1. Get the Code
 ```bash
 git clone https://github.com/ElenBOT/pix2tex2svg.git
