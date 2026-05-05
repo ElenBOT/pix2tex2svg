@@ -37,10 +37,10 @@ python server.py
 
 ## 4. Client Connect
 
-Make sure you are on the **same Wi-Fi / LAN** as the server machine, and go to the URL shown in the server console (or `https://<SERVER-IP>:7070` if using Docker):
+Make sure you are on the **same Wi-Fi / LAN** as the server machine, and go to the URL shown in the server console (or `https://<SERVER-IP>:7071` if using Docker):
 ```
-http://<SERVER-IP>:7070   (Standard)
-https://<SERVER-IP>:7070  (If using Docker or if you ran enable_https.bat)
+http://<SERVER-IP>:7071   (Standard)
+https://<SERVER-IP>:7071  (If using Docker or if you ran enable_https.bat)
 ```
 
 > **Note on HTTPS:** If using HTTPS, your browser will show a "Not Private" warning. Click **Advanced** -> **Proceed anyway**. This is required for the browser to allow the **Paste** button on LAN.
