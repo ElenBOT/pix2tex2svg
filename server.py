@@ -61,7 +61,18 @@ async def ocr_base64(payload: Base64Payload):
             # Strip the data-URI prefix
             data = data.split(",", 1)[1]
         img_bytes = base64.b64decode(data)
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+        img = Image.open(io.BytesIO(img_bytes))
+        
+        # Blend transparent background with white
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            bg = Image.new('RGBA', img.size, (255, 255, 255, 255))
+            bg.paste(img, mask=img)
+            img = bg.convert("RGB")
+        else:
+            img = img.convert("RGB")
+            
         latex = image_to_latex(img)
         return {"latex": latex}
     except Exception as e:
@@ -74,7 +85,17 @@ async def ocr_upload(file: UploadFile = File(...)):
     """Accept a multipart image upload and return LaTeX."""
     try:
         contents = await file.read()
-        img = Image.open(io.BytesIO(contents)).convert("RGB")
+        img = Image.open(io.BytesIO(contents))
+        
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            bg = Image.new('RGBA', img.size, (255, 255, 255, 255))
+            bg.paste(img, mask=img)
+            img = bg.convert("RGB")
+        else:
+            img = img.convert("RGB")
+            
         latex = image_to_latex(img)
         return {"latex": latex}
     except Exception as e:
