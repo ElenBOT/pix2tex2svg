@@ -229,8 +229,6 @@ input[type="color"]:disabled { opacity: 0.35; cursor: not-allowed; }
     min-width: 0;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    align-items: center;
     padding: 1rem;
     background: #ffffff;
     border-right: 1px solid var(--panel-border);
@@ -241,7 +239,9 @@ input[type="color"]:disabled { opacity: 0.35; cursor: not-allowed; }
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 100%;
+    min-width: 100%;
+    width: max-content;
+    min-height: 100%;
     font-size: 18px;
 }
 
