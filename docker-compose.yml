@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  pix2tex2svg:
+    build: .
+    container_name: pix2tex2svg
+    ports:
+      - "7070:7070"
+    environment:
+      - ENABLE_HTTPS=1
+    volumes:
+      - pix2tex_cache:/root/.cache
+    restart: unless-stopped
+
+volumes:
+  pix2tex_cache:

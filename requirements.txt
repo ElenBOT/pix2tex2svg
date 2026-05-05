@@ -1,0 +1,6 @@
+pix2tex[api]
+uvicorn
+fastapi
+pillow
+python-multipart
+cryptography
