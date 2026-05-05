@@ -13,7 +13,7 @@ cd pix2tex2svg
 The project uses Docker as the unified deployment method. This automatically handles all dependencies and natively sets up HTTPS for LAN access.
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 *Note: The first time you run an OCR request, it will automatically download the model weights (~1.5 GB).*
