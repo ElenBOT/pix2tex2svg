@@ -35,8 +35,10 @@ def get_model():
     global _model
     if _model is None:
         import os
-        encoder_path = os.path.join(os.path.dirname(__file__), "encoder.onnx")
-        decoder_path = os.path.join(os.path.dirname(__file__), "decoder.onnx")
+        # Use absolute path so it works both locally and inside Docker volume mounts
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        encoder_path = os.path.join(base_dir, "encoder.onnx")
+        decoder_path = os.path.join(base_dir, "decoder.onnx")
 
         if os.path.exists(encoder_path) and os.path.exists(decoder_path):
             logger.info("ONNX weights found — loading lightweight ONNX backend…")
@@ -44,10 +46,10 @@ def get_model():
             _model = ONNXLatexOCR(encoder_path, decoder_path)
             logger.info("ONNX model ready.")
         else:
-            logger.info("Loading pix2tex PyTorch model (first-time may download weights)…")
-            from pix2tex.cli import LatexOCR
-            _model = LatexOCR()
-            logger.info("PyTorch model ready.")
+            raise RuntimeError(
+                f"ONNX model files not found:\n  {encoder_path}\n  {decoder_path}\n"
+                "Please run 'python export_onnx.py' on your dev machine and commit the .onnx files."
+            )
     return _model
 
 
