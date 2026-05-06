@@ -65,7 +65,7 @@ class Base64Payload(BaseModel):
 
 
 @app.post("/ocr/base64")
-async def ocr_base64(payload: Base64Payload):
+def ocr_base64(payload: Base64Payload):
     """Accept a base64-encoded image (data-URI or raw) and return LaTeX."""
     try:
         data = payload.image
@@ -93,10 +93,10 @@ async def ocr_base64(payload: Base64Payload):
 
 
 @app.post("/ocr/upload")
-async def ocr_upload(file: UploadFile = File(...)):
+def ocr_upload(file: UploadFile = File(...)):
     """Accept a multipart image upload and return LaTeX."""
     try:
-        contents = await file.read()
+        contents = file.file.read()
         img = Image.open(io.BytesIO(contents))
         
         if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):

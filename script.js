@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ── OCR helper ───────────────────────────────────────────────────────────
-    async function runOcrOnFile(file, input, ocrStatus, btn) {
+    async function runOcrOnFile(file, input, ocrStatus, btn, signal) {
         if (!serverOnline) {
             showToast('OCR server is offline — start server.py first', true);
             return;
@@ -138,7 +138,11 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            const res = await fetch(`${API_BASE}/ocr/upload`, { method: 'POST', body: formData });
+            const res = await fetch(`${API_BASE}/ocr/upload`, { 
+                method: 'POST', 
+                body: formData,
+                signal: signal
+            });
             if (!res.ok) throw new Error(`Server error ${res.status}`);
             const data = await res.json();
             input.value = data.latex;
@@ -147,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { ocrStatus.textContent = ''; }, 3000);
             showToast('LaTeX extracted from image!');
         } catch (err) {
+            if (err.name === 'AbortError') return;
             ocrStatus.textContent = '';
             showToast('OCR failed: ' + err.message, true);
         } finally {
@@ -154,7 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    async function runOcrOnBase64(b64, input, ocrStatus, btn) {
+    async function runOcrOnBase64(b64, input, ocrStatus, btn, signal) {
         if (!serverOnline) {
             showToast('OCR server is offline — start server.py first', true);
             return;
@@ -166,7 +171,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch(`${API_BASE}/ocr/base64`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: b64 })
+                body: JSON.stringify({ image: b64 }),
+                signal: signal
             });
             if (!res.ok) throw new Error(`Server error ${res.status}`);
             const data = await res.json();
@@ -176,6 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => { ocrStatus.textContent = ''; }, 3000);
             showToast('LaTeX extracted from clipboard image!');
         } catch (err) {
+            if (err.name === 'AbortError') return;
             ocrStatus.textContent = '';
             showToast('OCR failed: ' + err.message, true);
         } finally {
@@ -235,7 +242,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Remove
-        removeBtn.addEventListener('click', () => rowEl.remove());
+        let ocrController = null;
+        removeBtn.addEventListener('click', () => {
+            if (ocrController) ocrController.abort();
+            rowEl.remove();
+        });
 
         // Drag-to-reorder
         setupDragHandle(rowEl, dragHandleBtn);
@@ -259,7 +270,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         const blob = await item.getType(imageType);
                         const bitmap = await createImageBitmap(blob);
                         const b64 = bitmapToBase64(bitmap);
-                        await runOcrOnBase64(b64, input, ocrStatus, ocrPasteBtn);
+                        if (ocrController) ocrController.abort();
+                        ocrController = new AbortController();
+                        await runOcrOnBase64(b64, input, ocrStatus, ocrPasteBtn, ocrController.signal);
                         found = true;
                         break;
                     }
@@ -285,7 +298,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (item.type.indexOf('image/') === 0) {
                     e.preventDefault(); // Stop default text paste
                     const blob = item.getAsFile();
-                    await runOcrOnFile(blob, input, ocrStatus, ocrPasteBtn);
+                    if (ocrController) ocrController.abort();
+                    ocrController = new AbortController();
+                    await runOcrOnFile(blob, input, ocrStatus, ocrPasteBtn, ocrController.signal);
                     break;
                 }
             }
@@ -299,7 +314,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const file = e.target.files[0];
                 globalFileInput.value = ''; // reset so same file can be re-selected
                 if (!file) return;
-                await runOcrOnFile(file, input, ocrStatus, ocrUploadBtn);
+                if (ocrController) ocrController.abort();
+                ocrController = new AbortController();
+                await runOcrOnFile(file, input, ocrStatus, ocrUploadBtn, ocrController.signal);
             };
             globalFileInput.addEventListener('change', handler);
             globalFileInput.click();
