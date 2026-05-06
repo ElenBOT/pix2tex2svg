@@ -30,15 +30,24 @@ docker compose up -d --build
 Best for Linux/macOS users who want to run natively without Docker.
 
 ```bash
+# Linux / macOS
 chmod +x run.sh
 ./run.sh
 ```
 
+```bat
+rem Windows
+run.bat
+```
+
 ### Option C: Conda (Scientific Computing)
-Best if you already use Miniconda/Anaconda.
+Best if you already use Miniconda/Anaconda (works on all platforms including Windows).
 
 ```bash
+# First time setup
 conda env create -f environment.yml
+
+# Every time after
 conda activate pix2tex2svg
 python server.py
 ```

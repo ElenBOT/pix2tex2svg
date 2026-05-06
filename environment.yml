@@ -4,6 +4,8 @@ channels:
   - defaults
 dependencies:
   - python=3.10
+  # Install pydantic via conda-forge to get correct pre-built binaries on all platforms
+  - pydantic
   - pip
   - pip:
       - onnxruntime
