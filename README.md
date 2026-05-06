@@ -39,8 +39,8 @@ python generate_certs.py
 python server.py
 ```
 
-### Option C: Local Shell + venv (Lightweight)
-For user want to use python in the OS level.
+### Option C: Local Shell + venv (Native)
+For users who want to run Python natively on the host OS.
 
 ```bash
 # Linux / macOS
@@ -53,6 +53,19 @@ chmod +x run.sh
 run.bat
 ```
 
+### Option D: Systemd Service (Linux Edge Devices)
+Best for dedicated Linux servers or edge devices (e.g., Raspberry Pi) where you want the service to start automatically on boot and restart if it crashes.
+
+1.  Setup the virtual environment first: `./run.sh` (then stop it with Ctrl+C).
+2.  Edit `pix2tex2svg.service` and update the `WorkingDirectory` and `ExecStart` paths.
+3.  Deploy the service:
+    ```bash
+    sudo cp pix2tex2svg.service /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable pix2tex2svg
+    sudo systemctl start pix2tex2svg
+    ```
+4.  Check logs: `journalctl -u pix2tex2svg -f`
 
 > **Note on Model Weights:** The pre-built ONNX weights (`encoder.onnx`, `decoder.onnx`) are already included in the repository. There is **no large model download step** required at runtime for any of these methods.
 

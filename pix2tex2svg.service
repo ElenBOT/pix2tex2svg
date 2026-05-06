@@ -1,0 +1,15 @@
+[Unit]
+Description=pix2tex2svg OCR Service
+After=network.target
+
+[Service]
+# Replace 'User' with your actual Linux username
+User=root
+# Replace '/path/to/pix2tex2svg' with the actual absolute path to your project folder
+WorkingDirectory=/path/to/pix2tex2svg
+ExecStart=/path/to/pix2tex2svg/venv/bin/python server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
