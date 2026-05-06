@@ -20,10 +20,20 @@ cd pix2tex2svg
 Choose the method that best fits your environment:
 
 ### Option A: Docker (Recommended)
-Best for isolation and cross-platform consistency. Handles all system dependencies (like OpenGl) automatically.
+Best for isolation and cross-platform consistency. Handles all system dependencies automatically.
 
 ```bash
-docker compose up -d --build
+# Start the service (will build the image on first run)
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the service
+docker compose stop
+
+# Restart the service
+docker compose start
 ```
 
 ### Option B: Conda (Scientific Computing)
