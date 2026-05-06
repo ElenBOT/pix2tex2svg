@@ -7,3 +7,8 @@ fastapi
 pillow
 python-multipart
 cryptography
+onnx
+onnxscript
+onnxruntime
+transformers
+
