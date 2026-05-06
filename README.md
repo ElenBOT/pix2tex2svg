@@ -62,3 +62,9 @@ Converting Pix2Tex to a standalone ONNX backend was a non-trivial task due to se
 3.  **Image Resizer Logic**: Pix2Tex uses a separate "Image Resizer" model to normalize input shapes. This was also exported to ONNX to ensure that the entire preprocessing pipeline remains independent of PyTorch.
 4.  **Static vs Dynamic Axes**: Ensuring the models could handle variable input image sizes and variable output sequence lengths required careful definition of dynamic axes during the export process.
 
+---
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
+
