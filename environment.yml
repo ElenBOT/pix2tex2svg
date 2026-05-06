@@ -1,0 +1,15 @@
+name: pix2tex2svg
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - onnxruntime
+      - transformers
+      - uvicorn
+      - fastapi
+      - pillow
+      - python-multipart
+      - cryptography

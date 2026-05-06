@@ -17,13 +17,33 @@ cd pix2tex2svg
 
 ## 2. Deployment
 
-The project uses Docker as the unified deployment method. This automatically handles all dependencies and natively sets up HTTPS for LAN access.
+Choose the method that best fits your environment:
+
+### Option A: Docker (Recommended)
+Best for isolation and cross-platform consistency. Handles all system dependencies (like OpenGl) automatically.
 
 ```bash
 docker compose up -d --build
 ```
 
-The pre-built ONNX model weights (`encoder.onnx`, `decoder.onnx`) are already included in the repository, so there is **no model download step** at runtime. The container image is also significantly smaller (~500 MB) compared to a full PyTorch setup.
+### Option B: Local Shell + venv (Lightweight)
+Best for Linux/macOS users who want to run natively without Docker.
+
+```bash
+chmod +x run.sh
+./run.sh
+```
+
+### Option C: Conda (Scientific Computing)
+Best if you already use Miniconda/Anaconda.
+
+```bash
+conda env create -f environment.yml
+conda activate pix2tex2svg
+python server.py
+```
+
+> **Note on Model Weights:** The pre-built ONNX weights (`encoder.onnx`, `decoder.onnx`) are already included in the repository. There is **no large model download step** required at runtime for any of these methods.
 
 ## 3. Client Connect
 
