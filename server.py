@@ -34,10 +34,20 @@ _model = None
 def get_model():
     global _model
     if _model is None:
-        logger.info("Loading pix2tex LatexOCR model (first-time may download weights)…")
-        from pix2tex.cli import LatexOCR
-        _model = LatexOCR()
-        logger.info("Model ready.")
+        import os
+        encoder_path = os.path.join(os.path.dirname(__file__), "encoder.onnx")
+        decoder_path = os.path.join(os.path.dirname(__file__), "decoder.onnx")
+
+        if os.path.exists(encoder_path) and os.path.exists(decoder_path):
+            logger.info("ONNX weights found — loading lightweight ONNX backend…")
+            from onnx_inference import ONNXLatexOCR
+            _model = ONNXLatexOCR(encoder_path, decoder_path)
+            logger.info("ONNX model ready.")
+        else:
+            logger.info("Loading pix2tex PyTorch model (first-time may download weights)…")
+            from pix2tex.cli import LatexOCR
+            _model = LatexOCR()
+            logger.info("PyTorch model ready.")
     return _model
 
 

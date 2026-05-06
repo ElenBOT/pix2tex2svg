@@ -15,5 +15,12 @@ COPY . .
 
 EXPOSE 7071
 
+# Export PyTorch model → ONNX once at build time so the server uses the fast
+# ONNX Runtime backend instead of PyTorch at runtime.
+# The pix2tex weights are downloaded on first run via the pix2tex CLI init path.
+RUN python -c "from pix2tex.cli import LatexOCR; LatexOCR()" && \
+    python export_onnx.py && \
+    python export_resizer.py
+
 # Run generate_certs.py if ENABLE_HTTPS=1, then start server
 CMD sh -c 'if [ "$ENABLE_HTTPS" = "1" ] && [ ! -f "cert.pem" ]; then python generate_certs.py; fi && python server.py'
