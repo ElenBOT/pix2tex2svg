@@ -8,7 +8,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-# Install requirements (which now force PyTorch CPU-only version for lightweight Docker image)
+# Install slim runtime deps only (no PyTorch, no pix2tex)
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .

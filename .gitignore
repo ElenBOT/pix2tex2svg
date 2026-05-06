@@ -3,3 +3,10 @@ __pycache__/
 *.pyo
 .DS_Store
 *.log
+
+# SSL certificates (auto-generated at container startup)
+cert.pem
+key.pem
+
+# Temp/scratch files
+model_arch.txt

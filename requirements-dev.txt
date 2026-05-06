@@ -1,0 +1,16 @@
+# Developer dependencies — for exporting PyTorch models to ONNX format.
+# Run this ONCE on your dev machine, then commit the generated .onnx files.
+#
+#   pip install -r requirements-dev.txt
+#   python export_onnx.py
+#   python export_resizer.py
+#   git add *.onnx
+#   git commit -m "chore: update pre-exported ONNX weights"
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+pix2tex[api]
+onnx
+onnxscript
+onnxruntime
+transformers

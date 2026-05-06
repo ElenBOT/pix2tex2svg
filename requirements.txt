@@ -1,7 +1,5 @@
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-torchvision
-pix2tex[api]
+onnxruntime
+transformers
 uvicorn
 fastapi
 pillow
