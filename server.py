@@ -153,6 +153,7 @@ if __name__ == "__main__":
     import os
     
     ips = get_all_local_ips()
+    port = int(os.environ.get("PORT", 7071))
     
     # Check for SSL certificates
     ssl_key = "key.pem"
@@ -165,7 +166,7 @@ if __name__ == "__main__":
     print("="*50)
     print("\n Open one of these URLs on any device on your Wi-Fi:\n")
     for ip in ips:
-        print(f"     {protocol}://{ip}:7071")
+        print(f"     {protocol}://{ip}:{port}")
     
     if use_ssl:
         print("\n [SSL Active] Browser will show a warning. Proceed manually.")
@@ -173,6 +174,6 @@ if __name__ == "__main__":
     print("\n" + "="*50 + "\n")
     
     if use_ssl:
-        uvicorn.run("server:app", host="0.0.0.0", port=7071, reload=False, ssl_keyfile=ssl_key, ssl_certfile=ssl_cert)
+        uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False, ssl_keyfile=ssl_key, ssl_certfile=ssl_cert)
     else:
-        uvicorn.run("server:app", host="0.0.0.0", port=7071, reload=False)
+        uvicorn.run("server:app", host="0.0.0.0", port=port, reload=False)

@@ -4,9 +4,10 @@ services:
     build: .
     container_name: pix2tex2svg
     ports:
-      - "7071:7071"
+      - "${PORT:-7071}:${PORT:-7071}"
     environment:
       - ENABLE_HTTPS=1
+      - PORT=${PORT:-7071}
     volumes:
       - .:/app
     restart: unless-stopped

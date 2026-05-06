@@ -88,6 +88,25 @@ https://<SERVER-IP>:7071
 
 > **Note on HTTPS:** Because the server generates a self-signed certificate, your browser will show a "Not Private" warning. Click **Advanced** → **Proceed anyway**. This is strictly required for your browser to grant access to your clipboard, allowing you to use the **Paste** button across the LAN.
 
+## 4. Advanced Configuration
+
+### Change Server Port
+The default port is `7071`. You can change it using the `PORT` environment variable:
+
+*   **Docker**: `PORT=8080 docker compose up -d`
+*   **Linux / macOS (Native)**: `PORT=8080 ./run.sh`
+*   **Windows (Native)**: 
+    ```bat
+    set PORT=8080
+    run.bat
+    ```
+*   **Conda**: 
+    ```bash
+    export PORT=8080  # Linux/macOS
+    set PORT=8080     # Windows
+    python server.py
+    ```
+
 ---
 
 ## For Developers — Updating the ONNX Models
