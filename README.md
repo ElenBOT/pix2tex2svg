@@ -26,21 +26,7 @@ Best for isolation and cross-platform consistency. Handles all system dependenci
 docker compose up -d --build
 ```
 
-### Option B: Local Shell + venv (Lightweight)
-Best for Linux/macOS users who want to run natively without Docker.
-
-```bash
-# Linux / macOS
-chmod +x run.sh
-./run.sh
-```
-
-```bat
-rem Windows
-run.bat
-```
-
-### Option C: Conda (Scientific Computing)
+### Option B: Conda (Scientific Computing)
 Best if you already use Miniconda/Anaconda (works on all platforms including Windows).
 
 ```bash
@@ -49,8 +35,24 @@ conda env create -f environment.yml
 
 # Every time after
 conda activate pix2tex2svg
+python generate_certs.py
 python server.py
 ```
+
+### Option C: Local Shell + venv (Lightweight)
+For user want to use python in the OS level.
+
+```bash
+# Linux / macOS
+chmod +x run.sh
+./run.sh
+```
+
+```bat
+# Windows
+run.bat
+```
+
 
 > **Note on Model Weights:** The pre-built ONNX weights (`encoder.onnx`, `decoder.onnx`) are already included in the repository. There is **no large model download step** required at runtime for any of these methods.
 

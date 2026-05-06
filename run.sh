@@ -26,6 +26,12 @@ echo "Checking dependencies..."
 pip install --upgrade pip
 pip install -r requirements.txt
 
-# 5. Run Server
+# 5. Generate SSL Certificates (if missing)
+if [ ! -f "cert.pem" ]; then
+    echo "Generating SSL certificates for HTTPS..."
+    python generate_certs.py
+fi
+
+# 6. Run Server
 echo "Starting server..."
 python server.py

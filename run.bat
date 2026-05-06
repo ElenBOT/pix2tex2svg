@@ -24,7 +24,13 @@ echo Checking dependencies...
 venv\Scripts\pip install --upgrade pip
 venv\Scripts\pip install -r requirements.txt
 
-:: 4. Run Server
+:: 4. Generate SSL Certificates (if missing)
+if not exist "cert.pem" (
+    echo Generating SSL certificates for HTTPS...
+    venv\Scripts\python generate_certs.py
+)
+
+:: 5. Run Server
 echo Starting server...
 venv\Scripts\python server.py
 
