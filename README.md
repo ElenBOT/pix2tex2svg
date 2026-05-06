@@ -13,9 +13,11 @@ OCR is powered by **[pix2tex](https://github.com/lukas-blecher/LaTeX-OCR)** by L
 
 ```bash
 git clone https://github.com/ElenBOT/pix2tex2svg.git
-cd pix2tex2svg
 ```
 
+```bash
+cd pix2tex2svg
+```
 ## 2. Deployment
 
 ### Option A: Docker (Recommended)
