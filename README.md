@@ -50,3 +50,15 @@ git push
 ```
 
 Deployment servers only need `requirements.txt` (slim runtime, no PyTorch).
+
+---
+
+## Technical Note: The Challenges of ONNX Export
+
+Converting Pix2Tex to a standalone ONNX backend was a non-trivial task due to several architecture-specific hurdles:
+
+1.  **Decoder Autoregression**: The Pix2Tex decoder is a causal transformer that predicts one token at a time. To run this in ONNX without PyTorch, we had to implement the autoregressive loop in Python using NumPy, feeding the output of each step back into the model until an `[EOS]` (End Of Sequence) token is reached.
+2.  **Tokenizer Compatibility**: The original model uses a Byte-Level BPE tokenizer with specific post-processing logic (handling 'Ġ' characters and LaTeX syntax cleaning). We successfully replicated this logic using `transformers.PreTrainedTokenizerFast` and custom string post-processors to ensure the OCR output matches the original PyTorch implementation's fidelity.
+3.  **Image Resizer Logic**: Pix2Tex uses a separate "Image Resizer" model to normalize input shapes. This was also exported to ONNX to ensure that the entire preprocessing pipeline remains independent of PyTorch.
+4.  **Static vs Dynamic Axes**: Ensuring the models could handle variable input image sizes and variable output sequence lengths required careful definition of dynamic axes during the export process.
+
