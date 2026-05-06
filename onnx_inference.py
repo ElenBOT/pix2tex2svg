@@ -15,20 +15,8 @@ from typing import Optional, Tuple, List
 import onnxruntime as ort
 from transformers import PreTrainedTokenizerFast
 
-# ── Default paths (relative to the pix2tex model dir inside site-packages) ──
-_PIX2TEX_MODEL_DIR = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    # installed package location: locate at runtime below
-)
-
-def _find_pix2tex_model_dir() -> str:
-    """Return the path to pix2tex's model directory (where settings/ and dataset/ live)."""
-    import site
-    for sp in site.getsitepackages():
-        candidate = os.path.join(sp, "pix2tex", "model")
-        if os.path.isdir(candidate):
-            return candidate
-    raise RuntimeError("pix2tex model directory not found. Is pix2tex installed?")
+# Directory where this file lives (= project root in both local and Docker)
+_HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 # ── Image utilities (mirrors pix2tex internals, no torch needed) ──────────────
@@ -112,10 +100,24 @@ class ONNXLatexOCR:
         decoder_path: str = "decoder.onnx",
         tokenizer_path: Optional[str] = None,
     ):
-        # Resolve tokenizer
+        # Resolve tokenizer: look in project dir first, then fall back to pix2tex install
         if tokenizer_path is None:
-            model_dir = _find_pix2tex_model_dir()
-            tokenizer_path = os.path.join(model_dir, "dataset", "tokenizer.json")
+            local_tok = os.path.join(_HERE, "tokenizer.json")
+            if os.path.exists(local_tok):
+                tokenizer_path = local_tok
+            else:
+                # Last-resort fallback: try finding pix2tex in site-packages
+                import site
+                for sp in site.getsitepackages():
+                    candidate = os.path.join(sp, "pix2tex", "model", "dataset", "tokenizer.json")
+                    if os.path.exists(candidate):
+                        tokenizer_path = candidate
+                        break
+                if tokenizer_path is None:
+                    raise RuntimeError(
+                        "tokenizer.json not found. Expected at: " + local_tok + "\n"
+                        "Copy it from pix2tex/model/dataset/tokenizer.json into the project root."
+                    )
         self.tokenizer = PreTrainedTokenizerFast(tokenizer_file=tokenizer_path)
 
         # ONNX sessions with full graph optimization
