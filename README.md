@@ -36,7 +36,7 @@ docker compose stop
 docker compose start
 ```
 
-### Option B: Conda (Scientific Computing)
+### Option B: Conda (Recommended)
 Best if you already use Miniconda/Anaconda (works on all platforms including Windows).
 
 ```bash
