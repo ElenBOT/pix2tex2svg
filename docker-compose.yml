@@ -9,8 +9,4 @@ services:
       - ENABLE_HTTPS=1
     volumes:
       - .:/app
-      - pix2tex_cache:/root/.cache
     restart: unless-stopped
-
-volumes:
-  pix2tex_cache:

@@ -4,10 +4,6 @@ __pycache__/
 .DS_Store
 *.log
 
-# Generated ONNX weights (built inside Docker at image build time)
-*.onnx
-*.onnx.data
-
 # SSL certificates (auto-generated at container startup)
 cert.pem
 key.pem
