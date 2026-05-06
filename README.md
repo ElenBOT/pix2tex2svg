@@ -4,6 +4,9 @@
 
 <img width="1019" height="552" alt="image" src="https://github.com/user-attachments/assets/25359f64-6c76-43f0-91fd-9fa54052c41c" />
 
+### Easy setup: 
+* Server side: Get the Code -> Deployment. (See Below)
+* Client side: Go to web browser for `https://<SERVER-IP>:7071`.
 
 ## How It Works
 
