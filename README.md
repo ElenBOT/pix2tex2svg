@@ -17,15 +17,15 @@ cd pix2tex2svg
 
 ## 2. Deployment
 
-Choose the method that best fits your environment:
-
 ### Option A: Docker (Recommended)
 Best for isolation and cross-platform consistency. Handles all system dependencies automatically.
 
 ```bash
-# Start the service (will build the image on first run)
 docker compose up -d
+```
 
+**Manage the service:**
+```bash
 # View logs
 docker compose logs -f
 
