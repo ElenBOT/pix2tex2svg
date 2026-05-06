@@ -48,7 +48,7 @@ chmod +x run.sh
 ./run.sh
 ```
 
-```bat
+```bash
 # Windows
 run.bat
 ```
