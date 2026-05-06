@@ -2,6 +2,8 @@
 
 **Image → LaTeX → SVG** — paste or upload an equation screenshot, OCR it to LaTeX, then export as SVG/PNG/PDF. Runs entirely on your local machine or LAN.
 
+<img width="975" height="539" alt="image" src="https://github.com/user-attachments/assets/a8de54a5-e64b-44fa-a286-1e132069b460" />
+
 ## How It Works
 
 OCR is powered by **[pix2tex](https://github.com/lukas-blecher/LaTeX-OCR)** by Lukas Blecher. To reduce image size and eliminate heavy dependencies at runtime, the PyTorch model has been pre-converted to **ONNX format** and bundled directly in this repository. The server runs on lightweight [ONNX Runtime](https://onnxruntime.ai/) — no PyTorch or pix2tex installation required.
